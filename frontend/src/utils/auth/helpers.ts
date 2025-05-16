@@ -25,3 +25,15 @@ export async function login(email: string, password: string) {
     throw error;
   }
 }
+
+export async function sendResetEmail(email: string): Promise<void> {
+  const res = await fetch("http://localhost:8081/api/auth/forgotPassword", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to send reset email");
+  }
+}

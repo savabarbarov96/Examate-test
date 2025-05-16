@@ -17,12 +17,15 @@ import full_logo_2 from "@/assets/full_logo_2.svg";
 import logo_icon_3 from "@/assets/green.png";
 
 import logo_icon_2 from "@/assets/logo_icon_2.svg";
+import { useNavigate } from "react-router";
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const navigate = useNavigate();
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -33,6 +36,7 @@ export function LoginForm({
             try {
               const token = await login(email, password);
               console.log("Login successful! Token:", token);
+              navigate("/dashboard")
             } catch (err) {
               alert("Login failed");
             }
@@ -58,12 +62,12 @@ export function LoginForm({
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
+                  <span
+                    onClick={() => navigate("/forgot-password")}
                     className="ml-auto text-sm underline-offset-2 hover:underline"
                   >
                     Forgot your password?
-                  </a>
+                  </span>
                 </div>
                 <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>

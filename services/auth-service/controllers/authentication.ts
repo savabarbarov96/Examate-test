@@ -152,9 +152,10 @@ export const forgotPassword = async (
   // await user.save({ validateBeforeSave: false });
 
   try {
-    const resetURL = `${req.protocol}://${req.get(
-      "host"
-    )}/api/auth/resetPassword/${resetToken}`;
+    const resetURL = `http://localhost:8080/reset-password/${resetToken}`
+    // `${req.protocol}://${req.get(
+    //   "host"
+    // )}/api/auth/resetPassword/${resetToken}`;
 
     const message = `Forgot your password? Submit request with your new password and passwordConfirm to ${resetURL}\nIf you didn't forget your password, please ignore this email.`;
 
