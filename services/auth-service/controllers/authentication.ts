@@ -1,29 +1,90 @@
 import { NextFunction, Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import * as crypto from "crypto";
+import { promisify } from "util";
 
-import User from "../models/User.js";
+import User, { IUser } from "../models/User.js";
 import { sendEmail } from "../utils/email.js";
-
-const users: Record<string, { email: string; password: string }> = {
-  "user@example.com": {
-    email: "user@example.com",
-    password: "test1234",
-  },
-};
-
-const cookieOptions = {
-  // expires: new Date(
-  //   Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-  // ),
-  httpOnly: true,
-};
+import { HydratedDocument } from "mongoose";
 
 const signToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET!, {
-    expiresIn: "8h",
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: "15m",
     // process.env.JWT_EXPIRES_IN,
+  });
+};
+
+const sign2FAToken = (userId: string) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, {
+    expiresIn: "5m",
+  });
+};
+
+export const promisifyJWTVerification = (
+  token: string,
+  secret: string
+): Promise<JwtPayload | string> => {
+  return new Promise((resolve, reject) => {
+    jwt.verify(token, secret, (err, decoded) => {
+      if (err) return reject(err);
+      resolve(decoded as JwtPayload);
+    });
+  });
+};
+
+// const createAndSendToken = (
+//   user: HydratedDocument<IUser>,
+//   statusCode: number,
+//   res: Response
+// ) => {
+//   const token = signToken(user._id.toString());
+
+//   const cookieOptions = {
+//     expires: new Date(
+//       Date.now() + +process.env.JWT_COOKIE_EXPIRES_IN! * 24 * 60 * 60 * 1000
+//     ),
+//     httpOnly: true,
+//     secure: process.env.NODE_ENV === "production",
+//   };
+
+//   res.cookie("jwt", token, cookieOptions);
+
+//   user.password = undefined!;
+//   res.status(statusCode).json({
+//     status: "success",
+//     token,
+//   });
+// };
+
+const createAndSendTokens = (user: HydratedDocument<IUser>, res: Response) => {
+  const accessToken = signToken(user._id.toString());
+  const refreshToken = jwt.sign(
+    { id: user._id },
+    process.env.JWT_REFRESH_SECRET!,
+    {
+      expiresIn: "8h",
+    }
+  );
+
+  res.cookie("jwt", accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 8 * 60 * 60 * 1000,
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
+
+  user.password = undefined!;
+  res.status(200).json({
+    status: "success",
+    user,
   });
 };
 
@@ -33,42 +94,133 @@ export const login = async (
   next: NextFunction
 ): Promise<any> => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!email || !password) {
+    if (!username || !password) {
       return res
         .status(400)
-        .json({ message: "Please provide email and password!" });
+        .json({ message: "Please provide username and password!" });
     }
 
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ username }).select(
+      "+password +twoFactorCode +twoFactorCodeExpires +twoFactorEnabled +status +isLocked +lockUntil"
+    );
+
+    const now = new Date();
+
+    if (user?.isLocked && user.lockUntil && user.lockUntil <= now) {
+      user.isLocked = false;
+      user.lockUntil = undefined;
+      user.failedLoginAttempts = 0;
+      await user.save({ validateBeforeSave: false });
+
+      console.log(
+        `User ${user.username} unlocked automatically after lock expired.`
+      );
+    }
+
+    if (user?.isLocked) {
+      return res.status(403).json({
+        message:
+          "Your account access has been restricted. Please contact your organization’s admin.",
+      });
+    }
 
     const isPasswordValid =
       user && (await bcrypt.compare(password, user.password!));
 
     if (!isPasswordValid) {
-      console.log("Invalid credentials");
+      if (user) {
+        if (
+          user.lastFailedLoginAttempt &&
+          now.getTime() - user.lastFailedLoginAttempt.getTime() <= 60 * 1000
+        ) {
+          user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+        } else {
+          user.failedLoginAttempts = 1;
+        }
 
-      return res.status(401).json({ message: "Invalid credentials" });
+        user.lastFailedLoginAttempt = now;
+
+        if (user.failedLoginAttempts > 5) {
+          user.isLocked = true;
+          user.lockUntil = new Date(now.getTime() + 15 * 60 * 1000);
+
+          await user.save({ validateBeforeSave: false });
+          
+          return res.status(403).json({
+            message:
+              "Your account access has been restricted. Please contact your organization’s admin.",
+          });
+        }
+
+        await user.save({ validateBeforeSave: false });
+      }
+
+      console.log("Invalid credentials.");
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
+
+    if (user.failedLoginAttempts && user.failedLoginAttempts > 0) {
+      user.failedLoginAttempts = 0;
+      user.lastFailedLoginAttempt = undefined;
+      user.lockUntil = undefined;
+      user.isLocked = false;
+      await user.save({ validateBeforeSave: false });
     }
 
     const secret = process.env.JWT_SECRET;
-
     if (!secret) {
       return res
         .status(500)
         .json({ message: "JWT secret is not configured in the environment." });
     }
 
-    // const token = jwt.sign({ email }, secret, { expiresIn: "1h" });
-    const token = signToken(user._id);
-    res.status(200).json({ token });
+    if (user.status === "unverified") {
+      console.log("Unverified account login attempt");
+      return res.status(403).json({
+        message:
+          "Unverified account. Please complete the verification process or contact your administrator.",
+      });
+    }
+
+    if (!user.twoFactorEnabled) {
+      createAndSendTokens(user, res);
+      return;
+    }
+
+    const twoFactorCode = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+
+    user.twoFactorCode = crypto
+      .createHash("sha256")
+      .update(twoFactorCode)
+      .digest("hex");
+    user.twoFactorCodeExpires = new Date(Date.now() + 20 * 60 * 1000);
+
+    await user.save({ validateBeforeSave: false });
+
+    await sendEmail({
+      email: user.email,
+      subject: "Your 2FA verification code",
+      message: `Your two-factor authentication code is: ${twoFactorCode}. It expires in 20 minutes.`,
+    });
+
+    const twoFAToken = sign2FAToken(user._id.toString());
+
+    res.status(200).json({
+      status: "2fa_required",
+      message:
+        "A verification code has been sent to your email. Please verify to complete login.",
+      twoFAToken,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-export const verifyJWT = (token: string): string | jwt.JwtPayload | null => {
+export const verifyJWT = (token: string): string | JwtPayload | null => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     console.error("JWT secret not set");
@@ -76,143 +228,267 @@ export const verifyJWT = (token: string): string | jwt.JwtPayload | null => {
   }
 
   try {
-    return jwt.verify(token, secret);
+    const decoded = jwt.verify(token, secret);
+    return decoded;
   } catch (err: any) {
     console.error("JWT verification failed:", err.message);
     return null;
   }
 };
 
-// export const protect = async (req, res, next) => {
-//   let token;
-//   if (
-//     req.headers.authorization &&
-//     req.headers.authorization.startsWith("Bearer")
-//   ) {
-//     token = req.headers.authorization.split(" ")[1];
-//   } else if (req.cookies.jwt) {
-//     token = req.cookies.jwt;
-//   }
-
-//   // if (!token) {
-//   //   return next(
-//   //     new AppError('You are not logged in! Please log in to continue', 401)
-//   //   );
-//   //   // res.redirect('/');
-//   // }
-
-//   // const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-//   // const currentUser = await User.findById(decoded.id);
-
-//   // if (!currentUser) {
-//   //   return next(
-//   //     new APIFeatures('The user belonging to this token does no longer exist'),
-//   //     401
-//   //   );
-//   // }
-
-//   // const isPasswordChanged = currentUser.changePasswordAfter(decoded.iat);
-//   // if (isPasswordChanged) {
-//   //   return next(
-//   //     new AppError('User recently changed password! Please log in again!', 401)
-//   //   );
-//   // }
-
-//   // req.user = currentUser;
-//   next();
-// };
-
-export const forgotPassword = async (
+export const protect = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<any> => {
-  const { email } = req.body;
+  try {
+    const token = req.cookies.jwt;
 
+    console.log("hello from protect");
+
+    if (!token) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    if (user.changePasswordAfter(decoded.iat)) {
+      return res.status(401).json({ message: "Password recently changed" });
+    }
+
+    req.user = user;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
+
+export const verify2fa = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.log("Missing or invalid token");
+      return res.status(401).json({ message: "Missing or invalid token" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    let decoded: any;
+    try {
+      // JWT.VERIFY is not async!!!
+      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch (err) {
+      console.log("Invalid or expired token");
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+
+    if (!decoded.userId) {
+      return res.status(401).json({ message: "Invalid 2FA session" });
+    }
+
+    const user = await User.findById(decoded.userId).select(
+      "+twoFactorCode +twoFactorCodeExpires"
+    );
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    if (
+      !user.twoFactorCode ||
+      !user.twoFactorCodeExpires ||
+      user.twoFactorCodeExpires < new Date()
+    ) {
+      return res.status(400).json({ message: "2FA code expired or not set" });
+    }
+
+    const { twoFACode } = req.body;
+
+    const hashedCode = crypto
+      .createHash("sha256")
+      .update(twoFACode)
+      .digest("hex");
+
+    console.log(hashedCode, user.twoFactorCode);
+
+    if (hashedCode !== user.twoFactorCode) {
+      console.log(hashedCode !== user.twoFactorCode);
+      return res.status(401).json({ message: "Invalid 2FA code" });
+    }
+
+    user.twoFactorCode = undefined;
+    user.twoFactorCodeExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    createAndSendTokens(user, res);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const forgotPassword = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  const { email } = req.body;
   const user = await User.findOne({ email });
 
   if (!user) {
-    // return next(new AppError('There is no user with that email address!', 404));
-    console.log("Such user is non-existing");
-    return res
-      .status(404)
-      .json({ message: "There is no user with that email address!" });
+    return res.status(404).json({
+      message: "There is no user with that email address!",
+    });
   }
 
-  const resetToken = crypto.randomBytes(32).toString("hex");
+  const verificationCode = Math.floor(
+    100000 + Math.random() * 900000
+  ).toString();
+  const expires = new Date(Date.now() + 10 * 60 * 1000);
 
-  user.passwordResetToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
-  user.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
-
+  user.verificationCode = verificationCode;
+  user.verificationCodeExpires = expires;
   await user.save({ validateBeforeSave: false });
-  // user.createPasswordResetToken();
-  // await user.save({ validateBeforeSave: false });
 
   try {
-    const resetURL = `http://localhost:8080/reset-password/${resetToken}`
-    // `${req.protocol}://${req.get(
-    //   "host"
-    // )}/api/auth/resetPassword/${resetToken}`;
-
-    const message = `Forgot your password? Submit request with your new password and passwordConfirm to ${resetURL}\nIf you didn't forget your password, please ignore this email.`;
-
-    console.log(" hello ");
-
+    const message = `Your password reset code is: ${verificationCode}`;
     await sendEmail({
       email: user.email,
-      subject: "Your password reset token (valid for 10 min)",
+      subject: "Your password reset code",
       message,
     });
-    // await new Email(user, resetURL).sendPasswordReset();
 
-    res.status(200).json({
-      status: "success",
-      message: "Token sent to email",
+    return res.status(200).json({
+      message: "A 6-digit code has been sent to your email.",
     });
   } catch (err) {
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
+    user.verificationCode = undefined;
+    user.verificationCodeExpires = undefined;
     await user.save({ validateBeforeSave: false });
-    res.status(500).json({
-      status: "success",
-      message: "There is an error sending the email. Try again later!",
+
+    return res.status(500).json({
+      message: "Failed to send verification code. Please try again.",
     });
   }
 };
 
-export const resetPassword = async (
+export const verifyResetCode = async (
   req: Request,
-  res: Response,
-  next: NextFunction
+  res: Response
 ): Promise<any> => {
-  const hashedToken = crypto
-    .createHash("sha256")
-    .update(req.params.token)
-    .digest("hex");
+  const { email, code } = req.body;
 
-  const user = await User.findOne({
-    passwordResetToken: hashedToken,
-    passwordResetExpires: {
-      $gt: Date.now(),
-    },
-  });
+  const user = await User.findOne({ email }).select("+verificationCode");
 
-  if (!user) {
-    return res
-      .status(400)
-      .json({ message: "Token is invalid or has expired!" });
+  if (
+    !user ||
+    !user.verificationCode ||
+    user.verificationCode !== code ||
+    !user.verificationCodeExpires ||
+    user.verificationCodeExpires < new Date()
+  ) {
+    return res.status(400).json({ message: "Incorrect code." });
   }
 
-  user.password = req.body.password;
-  user.passwordConfirm = req.body.passwordConfirm;
-  user.passwordResetToken = undefined;
-  user.passwordResetExpires = undefined;
+  user.verificationCode = undefined;
+  user.verificationCodeExpires = undefined;
+  await user.save({ validateBeforeSave: false });
 
-  await user.save();
+  return res.status(200).json({ message: "Code verified. Proceed to reset." });
+};
 
-  const token = signToken(user._id);
-  res.status(200).json({ token });
+export const changePassword = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword) {
+    return res
+      .status(400)
+      .json({ message: "Email and password are required." });
+  }
+
+  try {
+    const user = await User.findOne({ email }).select("+password");
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found." });
+    }
+
+    user.password = newPassword;
+    user.passwordChangedAt = new Date();
+    user.verificationCode = undefined;
+    user.verificationCodeExpires = undefined;
+
+    await user.save({ validateBeforeSave: false });
+
+    // createAndSendTokens(user, res);
+     return res.status(200).json({ message: "Your password has been updated successfully." });
+  } catch (err) {
+    console.error("Error resetting password:", err);
+    return res.status(500).json({ message: "Something went wrong." });
+  }
+};
+
+export const refreshAccessToken = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  const token = req.cookies.refreshToken;
+
+  if (!token) {
+    return res.status(401).json({ message: "Refresh token missing" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET!) as any;
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    if (user.changePasswordAfter(decoded.iat)) {
+      return res
+        .status(401)
+        .json({ message: "Password recently changed. Please log in again." });
+    }
+
+    const newAccessToken = signToken(user._id.toString());
+
+    res.cookie("jwt", newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 8 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({ message: "Token refreshed" });
+  } catch (err) {
+    res.status(403).json({ message: "Invalid or expired refresh token" });
+  }
+};
+
+export const logout = (req: Request, res: Response) => {
+  res.clearCookie("jwt", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+
+  res.status(200).json({ message: "Logged out successfully" });
 };
