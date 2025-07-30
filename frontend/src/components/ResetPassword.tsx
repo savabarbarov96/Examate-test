@@ -32,7 +32,7 @@ export function ResetPassword({
     setLoading(true);
     try {
       const response = await fetch(
-        `https://auth-service.examate.net/api/auth/resetPassword/${token}`,
+        `http://auth-service.examate.net/api/auth/resetPassword/${token}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
