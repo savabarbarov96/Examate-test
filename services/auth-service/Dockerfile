@@ -23,6 +23,8 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
 COPY .env .env
 
+RUN echo "Dumping .env content:" && cat .env || echo ".env not found!"
+
 # Install only production dependencies
 RUN npm install
 
