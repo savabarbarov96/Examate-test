@@ -12,24 +12,6 @@ COPY . .
 
 # Compile TypeScript → JavaScript
 RUN npm run build
+RUN npm set progress=false && npm install
+CMD ["node", "server.js"]
 
-# ---------- Stage 2: Run ----------
-FROM node:18-alpine
-
-WORKDIR /app
-
-# Copy only compiled output and production deps
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
-
-# Install only production dependencies
-RUN npm install --production
-
-# If you use environment variables (e.g., via .env)
-ENV NODE_ENV=production
-
-# Expose app port (adjust if not 3000)
-EXPOSE 8081
-
-# Start the app
-CMD ["node", "dist/server.js"]
