@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # ---------- Stage 2: Run ----------
-FROM node:lts-buster
+FROM node:18-alpine
 
 WORKDIR /app
 
