@@ -11,7 +11,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "http://auth-service.examate.net:8080",
+    origin: process.env.CLIENT_ORIGIN || "https://dev.examate.net",
     credentials: true,
   })
 );
