@@ -12,9 +12,18 @@ const app = express();
 app.use(
   cors({
     origin: process.env.CLIENT_ORIGIN || "http://dev.examate.net",
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
     credentials: true,
   })
 );
+
+app.options('*', cors({
+  origin: process.env.CLIENT_ORIGIN || "http://dev.examate.net",
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+}));
+
 app.use(express.json());
 app.use(cookieParser());
 
