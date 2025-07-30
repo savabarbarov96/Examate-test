@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 
 export const sendEmail = async (options) => {
   const transporter = nodemailer.createTransport({
+    // @ts-ignore
     host: "mail.exa-ms.com",
     secure: false,
     port: "587",
