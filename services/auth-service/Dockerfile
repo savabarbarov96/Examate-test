@@ -29,7 +29,7 @@ RUN npm install --production
 ENV NODE_ENV=production
 
 # Expose app port (adjust if not 3000)
-EXPOSE 3000
+EXPOSE 8081
 
 # Start the app
 CMD ["node", "dist/server.js"]
