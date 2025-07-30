@@ -24,10 +24,7 @@ COPY --from=builder /app/package*.json ./
 COPY .env .env
 
 # Install only production dependencies
-RUN npm install --production
-
-# If you use environment variables (e.g., via .env)
-ENV NODE_ENV=production
+RUN npm install
 
 # Expose app port (adjust if not 3000)
 EXPOSE 8081
