@@ -21,6 +21,7 @@ WORKDIR /app
 # Copy only compiled output and production deps
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
+COPY .env .env
 
 # Install only production dependencies
 RUN npm install --production
