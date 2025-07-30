@@ -11,7 +11,6 @@ RUN npm install
 COPY . .
 
 # Compile TypeScript → JavaScript
-RUN npm run dev
 RUN npm run build
 
 # ---------- Stage 2: Run ----------
