@@ -9,14 +9,21 @@ import authRoutes from "./routes/user.js";
 dotenv.config();
 const app = express();
 
-app.use(
-  cors({
-    origin: process.env.CLIENT_ORIGIN || "http://dev.examate.net",
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type'],
-    credentials: true,
-  })
-);
+const origin = process.env.CLIENT_ORIGIN?.replace(/^"|"$/g, '') || "http://dev.examate.net";
+
+app.use(cors({
+  origin: origin,
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+}));
+
+app.options(/.*/, cors({
+  origin: origin,
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+}));
 
 app.use(express.json());
 app.use(cookieParser());
