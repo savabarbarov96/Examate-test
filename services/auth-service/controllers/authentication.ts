@@ -121,6 +121,7 @@ export const login = async (
 
     if (user?.isLocked) {
       return res.status(403).json({
+        status: "locked",
         message:
           "Your account access has been restricted. Please contact your organization’s admin.",
       });
@@ -147,8 +148,9 @@ export const login = async (
           user.lockUntil = new Date(now.getTime() + 15 * 60 * 1000);
 
           await user.save({ validateBeforeSave: false });
-          
+
           return res.status(403).json({
+            status: "locked",
             message:
               "Your account access has been restricted. Please contact your organization’s admin.",
           });
@@ -179,6 +181,7 @@ export const login = async (
     if (user.status === "unverified") {
       console.log("Unverified account login attempt");
       return res.status(403).json({
+        status: "unverified",
         message:
           "Unverified account. Please complete the verification process or contact your administrator.",
       });
@@ -278,7 +281,6 @@ export const verify2fa = async (
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      console.log("Missing or invalid token");
       return res.status(401).json({ message: "Missing or invalid token" });
     }
 
@@ -286,10 +288,8 @@ export const verify2fa = async (
 
     let decoded: any;
     try {
-      // JWT.VERIFY is not async!!!
       decoded = jwt.verify(token, process.env.JWT_SECRET!);
     } catch (err) {
-      console.log("Invalid or expired token");
       return res.status(401).json({ message: "Invalid or expired token" });
     }
 
@@ -298,11 +298,18 @@ export const verify2fa = async (
     }
 
     const user = await User.findById(decoded.userId).select(
-      "+twoFactorCode +twoFactorCodeExpires"
+      "+twoFactorCode +twoFactorCodeExpires +failed2FAAttempts +twoFALockUntil"
     );
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
+    }
+
+    if (user.lockUntil && user.lockUntil > new Date()) {
+      return res.status(403).json({
+        message: "Account locked",
+        lockUntil: user.lockUntil,
+      });
     }
 
     if (
@@ -314,19 +321,34 @@ export const verify2fa = async (
     }
 
     const { twoFACode } = req.body;
-
     const hashedCode = crypto
       .createHash("sha256")
       .update(twoFACode)
       .digest("hex");
 
-    console.log(hashedCode, user.twoFactorCode);
-
     if (hashedCode !== user.twoFactorCode) {
-      console.log(hashedCode !== user.twoFactorCode);
+      user.failed2FAAttempts = (user.failed2FAAttempts || 0) + 1;
+
+      if (user.failed2FAAttempts >= 10) {
+        user.lockUntil = new Date(Date.now() + 30 * 60 * 1000);
+        user.isLocked = true;
+        user.failed2FAAttempts = 0;
+        user.twoFactorCode = undefined;
+        user.twoFactorCodeExpires = undefined;
+        await user.save({ validateBeforeSave: false });
+
+        return res.status(403).json({
+          status: "locked",
+          message:
+            "Your account access has been restricted. Please contact your organization’s admin.",
+        });
+      }
+
+      await user.save({ validateBeforeSave: false });
       return res.status(401).json({ message: "Invalid 2FA code" });
     }
 
+    user.failed2FAAttempts = 0;
     user.twoFactorCode = undefined;
     user.twoFactorCodeExpires = undefined;
     await user.save({ validateBeforeSave: false });
@@ -433,7 +455,9 @@ export const changePassword = async (
     await user.save({ validateBeforeSave: false });
 
     // createAndSendTokens(user, res);
-     return res.status(200).json({ message: "Your password has been updated successfully." });
+    return res
+      .status(200)
+      .json({ message: "Your password has been updated successfully." });
   } catch (err) {
     console.error("Error resetting password:", err);
     return res.status(500).json({ message: "Something went wrong." });
