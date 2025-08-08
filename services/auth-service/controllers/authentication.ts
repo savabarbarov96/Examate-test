@@ -264,6 +264,7 @@ export const protect = async (
       return res.status(401).json({ message: "Password recently changed" });
     }
 
+    // @ts-ignore
     req.user = user;
     next();
   } catch (err) {
