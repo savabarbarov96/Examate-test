@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/auth/label";
 import { useState, useEffect } from "react";
 import { login, verify2FA } from "@/utils/auth/helpers";
 
-import { AlertCircleIcon, CheckCircle2Icon, PopcornIcon } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircleIcon } from "lucide-react";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 
 import logo_icon_3 from "@/assets/green.png";
 import { useNavigate } from "react-router";
@@ -29,26 +29,37 @@ export function LoginForm({
   const [isLoginInvalid, setIsLoginInvalid] = useState(false);
   const [loginFailMessage, setLoginFailMessage] = useState("");
 
-  const navigate = useNavigate();
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [hasAttemptedVerification, setHasAttemptedVerification] =
+    useState(false);
 
-  const { status, setStatus } = useAuth();
+  const navigate = useNavigate();
+  const { setStatus } = useAuth();
 
   useEffect(() => {
     if (isLoginInvalid) {
       const timeout = setTimeout(() => {
         setIsLoginInvalid(false);
       }, 5000);
-
       return () => clearTimeout(timeout);
     }
   }, [isLoginInvalid]);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendCooldown > 0) {
+      interval = setInterval(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendCooldown]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { status, user } = await login(username, password);
-
-      const { twoFAToken, firstLogin } = user;
+      const { status, twoFAToken, message } = await login(username, password);
       const is2FARequired = status === "2fa_required";
 
       if (is2FARequired) {
@@ -60,7 +71,6 @@ export function LoginForm({
       }
     } catch (err: unknown) {
       setIsLoginInvalid(true);
-
       if (err instanceof Error) {
         setLoginFailMessage(err.message);
       } else {
@@ -71,13 +81,47 @@ export function LoginForm({
 
   const handle2FAVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const res = await verify2FA(twoFATempIDToken, twoFACode);
 
-      // navigate("/dashboard");
-    } catch (err) {
-      alert("Invalid 2FA code");
+    // If first attempt OR cooldown is over and user entered a code
+    if (twoFACode.length === 6 && resendCooldown === 0) {
+      try {
+        setIsVerifying(true);
+        await verify2FA(twoFATempIDToken, twoFACode);
+        setStatus("authenticated");
+        navigate("/dashboard");
+      } catch (err) {
+        setIsLoginInvalid(true);
+        if (err instanceof Error) {
+          setLoginFailMessage(err.message);
+        } else {
+          setLoginFailMessage("Unknown error");
+        }
+
+        setHasAttemptedVerification(true);
+        setResendCooldown(60);
+      } finally {
+        setIsVerifying(false);
+      }
     }
+
+    else if (hasAttemptedVerification && resendCooldown === 0) {
+      try {
+        setResendCooldown(60);
+        const { twoFAToken: newToken } = await login(username, password);
+        setTwoFATempIDToken(newToken);
+      } catch {
+        alert("Failed to resend 2FA code.");
+      }
+    }
+  };
+
+  const get2FAButtonLabel = () => {
+    if (!hasAttemptedVerification) {
+      return isVerifying ? "Verifying..." : "Verify";
+    }
+    return resendCooldown > 0
+      ? `Resend Code (${resendCooldown}s)`
+      : "Resend Code";
   };
 
   return (
@@ -85,16 +129,31 @@ export function LoginForm({
       <Card className="overflow-hidden">
         <CardContent className="grid p-0 md:grid-cols-2">
           {show2FA ? (
-            <form onSubmit={handle2FAVerify} className="space-y-4">
+            <form onSubmit={handle2FAVerify} className="space-y-4 p-6 md:p-8">
               <h2 className="text-xl font-semibold text-center">
                 Enter 2FA Code
               </h2>
+
+              {isLoginInvalid ? (
+                <Alert variant="destructive">
+                  <AlertCircleIcon />
+                  <AlertTitle>{loginFailMessage}</AlertTitle>
+                </Alert>
+              ) : null}
+
               <InputOTPPattern
                 value={twoFACode}
                 onChange={(val) => setTwoFACode(val)}
               />
-              <Button type="submit" className="w-full">
-                Verify
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={
+                  isVerifying ||
+                  (hasAttemptedVerification && resendCooldown > 0)
+                }
+              >
+                {get2FAButtonLabel()}
               </Button>
             </form>
           ) : (
@@ -129,7 +188,7 @@ export function LoginForm({
                     <Label htmlFor="password">Password</Label>
                     <span
                       onClick={() => navigate("/forgot-password")}
-                      className="ml-auto text-sm underline-offset-2 hover:underline"
+                      className="ml-auto text-sm underline-offset-2 hover:underline cursor-pointer"
                     >
                       Forgot your password?
                     </span>

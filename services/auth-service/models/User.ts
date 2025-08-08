@@ -24,6 +24,7 @@ export interface IUser extends IUserMethods {
   firstLogin: boolean;
   verificationCode?: string;
   verificationCodeExpires?: Date;
+  failed2FAAttempts: number;
   lockUntil?: Date;
 }
 
@@ -89,6 +90,7 @@ const userSchema = new mongoose.Schema<IUser>({
     type: Boolean,
     default: true,
   },
+  failed2FAAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date },
 });
 
