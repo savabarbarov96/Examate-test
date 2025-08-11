@@ -76,7 +76,7 @@ const userSchema = new mongoose.Schema<IUser>({
   twoFactorCodeExpires: Date,
   twoFactorEnabled: {
     type: Boolean,
-    default: false,
+    default: true,
   },
   failedLoginAttempts: { type: Number, default: 0 },
   lastFailedLoginAttempt: Date,
