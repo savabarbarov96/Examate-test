@@ -129,7 +129,7 @@ export const login = async (
 
     const isPasswordValid =
       user && (await bcrypt.compare(password, user.password!));
-
+      
     if (!isPasswordValid) {
       if (user) {
         if (

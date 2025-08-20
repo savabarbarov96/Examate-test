@@ -72,7 +72,7 @@ export function LoginForm({
     } catch (err: unknown) {
       setIsLoginInvalid(true);
       if (err instanceof Error) {
-        setLoginFailMessage(err.message);
+        setLoginFailMessage("An error occured, while trying to log in. Please try again");
       } else {
         setLoginFailMessage("Unknown error");
       }
@@ -82,7 +82,6 @@ export function LoginForm({
   const handle2FAVerify = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // If first attempt OR cooldown is over and user entered a code
     if (twoFACode.length === 6 && resendCooldown === 0) {
       try {
         setIsVerifying(true);

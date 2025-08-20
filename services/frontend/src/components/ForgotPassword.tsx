@@ -10,6 +10,7 @@ import { CheckCircle2Icon } from "lucide-react";
 import { sendResetEmail, verifyCode } from "@/utils/auth/helpers";
 import { emailValidation } from "@/utils/auth/validators";
 import logo_icon_3 from "@/assets/green.png";
+import { InputOTPPattern } from "./InputOTP";
 
 interface ForgotPasswordProps extends React.ComponentProps<"div"> {}
 
@@ -115,14 +116,10 @@ export function ForgotPassword({ className, ...props }: ForgotPasswordProps) {
                 </div>
               ) : (
                 <div className="grid gap-2">
-                  <Label htmlFor="code">Enter Validation Code</Label>
-                  <Input
-                    id="code"
-                    type="text"
-                    placeholder="123456"
+                  <Label htmlFor="code">Enter Verification Code</Label>
+                  <InputOTPPattern
                     value={code}
-                    maxLength={6}
-                    onChange={(e) => setCode(e.target.value)}
+                    onChange={(val) => setCode(val)}
                   />
                   {codeError && (
                     <p className="text-xs text-red-500">{codeError}</p>

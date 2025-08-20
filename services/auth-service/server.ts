@@ -9,20 +9,20 @@ import authRoutes from "./routes/user.js";
 dotenv.config();
 const app = express();
 
-const origin = process.env.CLIENT_ORIGIN?.replace(/^"|"$/g, '') || "http://dev.examate.net";
+const origin = process.env.CLIENT_ORIGIN?.replace(/^"|"$/g, '') || "http://localhost:8080";
 
 app.use(cors({
   origin: origin,
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.options(/.*/, cors({
   origin: origin,
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json());
