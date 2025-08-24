@@ -35,7 +35,7 @@ export function LoginForm({
     useState(false);
 
   const navigate = useNavigate();
-  const { setStatus } = useAuth();
+  const { setStatus, setUser } = useAuth();
 
   useEffect(() => {
     if (isLoginInvalid) {
