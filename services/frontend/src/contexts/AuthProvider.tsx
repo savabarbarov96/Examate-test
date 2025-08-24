@@ -13,6 +13,7 @@ interface AuthContextType {
   user: any | null;
   status: AuthStatus;
   setStatus: React.Dispatch<React.SetStateAction<AuthStatus>>;
+  setUser: React.Dispatch<React.SetStateAction<any | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,7 +35,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const res = await api.get("/api/auth/me", { withCredentials: true });
         setUser(res.data);
         setStatus("authenticated");
-      } catch {
+      } catch(err) {
         setUser(null);
         setStatus("unauthenticated");
       }
@@ -44,38 +45,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useLayoutEffect(() => {
-    const interceptor = api.interceptors.response.use(
-      (res) => res,
-      async (error) => {
-        const originalRequest = error.config;
+  const interceptor = api.interceptors.response.use(
+    (res) => res,
+    async (error) => {
+      const originalRequest = error.config;
 
-        if (
-          [401, 403].includes(error.response?.status) &&
-          !originalRequest._retry &&
-          !originalRequest.url.includes("/auth/refresh")
-        ) {
-          originalRequest._retry = true;
+      if (!originalRequest._retry && !originalRequest.url.includes("/auth/refresh")) {
+        originalRequest._retry = true;
 
+        if (error.response?.status === 401) {
           try {
             await api.get("/api/auth/refresh", { withCredentials: true });
-            
             return api(originalRequest);
-          } catch (err) {
+          } catch {
             setUser(null);
             setStatus("unauthenticated");
-            return Promise.reject(err);
+            return Promise.reject(error);
           }
         }
 
-        return Promise.reject(error);
+        if (error.response?.status === 403) {
+          console.warn("User is locked or unverified:", error.response.data);
+          return Promise.reject(error);
+        }
       }
-    );
 
-    return () => api.interceptors.response.eject(interceptor);
-  }, []);
+      return Promise.reject(error);
+    }
+  );
+
+  return () => api.interceptors.response.eject(interceptor);
+}, []);
+
 
   return (
-    <AuthContext.Provider value={{ user, status, setStatus }}>
+    <AuthContext.Provider value={{ user, status, setStatus, setUser }}>
       {children}
     </AuthContext.Provider>
   );

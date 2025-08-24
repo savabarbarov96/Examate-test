@@ -9,10 +9,8 @@ export function useLogout() {
     try {
       await axios.post("/api/auth/logout", {}, { withCredentials: true });
 
-      // Clear client-side auth (adapt to your auth system)
-      localStorage.clear(); // or use authStore.setState({ isAuthenticated: false })
+      localStorage.clear();
 
-      // Redirect to login
       navigate("/login", { replace: true });
     } catch (err) {
       console.error("Logout failed", err);
