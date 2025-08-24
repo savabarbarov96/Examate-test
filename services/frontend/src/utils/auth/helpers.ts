@@ -5,6 +5,7 @@ export async function login(username: string, password: string) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({ username, password }),
     });
 
@@ -33,6 +34,7 @@ export async function verify2FA(twoFAIDToken: string, twoFACode: string) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${twoFAIDToken}`,
       },
+      credentials: "include",
       body: JSON.stringify({ twoFACode }),
     });
 
@@ -103,6 +105,7 @@ export async function changePassword(
   const res = await fetch("http://localhost:8081/api/auth/change-password", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ email, newPassword }),
   });
 
