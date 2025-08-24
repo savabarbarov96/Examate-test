@@ -1,11 +1,22 @@
 import { useAuth } from "@/contexts/AuthProvider";
 import { JSX } from "react";
 import { Navigate } from "react-router";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function ProtectedRoute({ children }: { children: JSX.Element }) {
+export default function ProtectedRoute({
+  children,
+}: {
+  children: JSX.Element;
+}) {
   const { status } = useAuth();
 
-  if (status === "checking" || status === "idle") return null;
+  if (status === "checking" || status === "idle") {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-muted">
+        <Skeleton className="h-full w-full" />
+      </div>
+    );
+  }
 
   if (status === "unauthenticated") {
     return <Navigate to="/" replace />;
