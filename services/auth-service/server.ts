@@ -13,14 +13,14 @@ const origin = process.env.CLIENT_ORIGIN?.replace(/^"|"$/g, '') || "http://local
 
 app.use(cors({
   origin: origin,
-  credentials: true,
+  //credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.options(/.*/, cors({
   origin: origin,
-  credentials: true,
+  //credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
