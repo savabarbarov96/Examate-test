@@ -1,6 +1,6 @@
 export async function login(username: string, password: string) {
   try {
-    const response = await fetch("http://localhost:8081/api/auth/login", {
+    const response = await fetch("http://auth-service.examate.net/api/auth/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
