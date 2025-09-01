@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router";
-
 import "./App.css";
 
 import AllUsersPage from "@/components/pages/AllUsers";
@@ -11,6 +10,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ChangePasswordPage from "./components/pages/ChangePassword";
 import CreateUserPage from "./components/pages/CreateUser";
 import AllUserRolesPage from "./components/pages/AllUserRoles";
+import SidebarLayout from "./layouts/SidebarLayout";
 
 function App() {
   return (
@@ -18,44 +18,21 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route
-            path="/dashboard"
             element={
               <ProtectedRoute>
-                <DashboardPage />
+                <SidebarLayout />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/all-users"
-            element={
-              <ProtectedRoute>
-                <AllUsersPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/create-user"
-            element={
-              <ProtectedRoute>
-                <CreateUserPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/all-roles"
-            element={
-              <ProtectedRoute>
-                <AllUserRolesPage />
-              </ProtectedRoute>
-            }
-          />
+          >
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/all-users" element={<AllUsersPage />} />
+            <Route path="/create-user" element={<CreateUserPage />} />
+            <Route path="/all-roles" element={<AllUserRolesPage />} />
+          </Route>
 
           <Route path="/" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />
-          {/* 
-<Route path="/update-user:id" element={<ChangePasswordPage />} /> */}
         </Routes>
       </BrowserRouter>
     </AuthProvider>

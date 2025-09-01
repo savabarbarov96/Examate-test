@@ -1,12 +1,12 @@
 import { useAuth } from "@/contexts/AuthProvider";
-import { JSX } from "react";
+import { ReactNode } from "react";
 import { Navigate } from "react-router";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProtectedRoute({
   children,
 }: {
-  children: JSX.Element;
+  children: ReactNode;
 }) {
   const { status } = useAuth();
 
@@ -22,5 +22,5 @@ export default function ProtectedRoute({
     return <Navigate to="/" replace />;
   }
 
-  return children;
+  return <>{children}</>;
 }

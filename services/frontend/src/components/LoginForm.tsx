@@ -67,7 +67,7 @@ export function LoginForm({
         setTwoFATempIDToken(twoFAToken);
       } else {
         setStatus("authenticated");
-        navigate("/dashboard");
+        navigate("/all-users");
       }
     } catch (err: unknown) {
       setIsLoginInvalid(true);
@@ -87,7 +87,7 @@ export function LoginForm({
         setIsVerifying(true);
         await verify2FA(twoFATempIDToken, twoFACode);
         setStatus("authenticated");
-        navigate("/dashboard");
+        navigate("/all-users");
       } catch (err) {
         setIsLoginInvalid(true);
         if (err instanceof Error) {
