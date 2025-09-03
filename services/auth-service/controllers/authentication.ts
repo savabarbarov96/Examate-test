@@ -33,30 +33,6 @@ export const promisifyJWTVerification = (
   });
 };
 
-// const createAndSendToken = (
-//   user: HydratedDocument<IUser>,
-//   statusCode: number,
-//   res: Response
-// ) => {
-//   const token = signToken(user._id.toString());
-
-//   const cookieOptions = {
-//     expires: new Date(
-//       Date.now() + +process.env.JWT_COOKIE_EXPIRES_IN! * 24 * 60 * 60 * 1000
-//     ),
-//     httpOnly: true,
-//     secure: process.env.NODE_ENV === "production",
-//   };
-
-//   res.cookie("jwt", token, cookieOptions);
-
-//   user.password = undefined!;
-//   res.status(statusCode).json({
-//     status: "success",
-//     token,
-//   });
-// };
-
 const createAndSendTokens = (user: HydratedDocument<IUser>, res: Response) => {
   const accessToken = signToken(user._id.toString());
   const refreshToken = jwt.sign(
@@ -70,14 +46,14 @@ const createAndSendTokens = (user: HydratedDocument<IUser>, res: Response) => {
   res.cookie("jwt", accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: 8 * 60 * 60 * 1000,
   });
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
@@ -129,7 +105,7 @@ export const login = async (
 
     const isPasswordValid =
       user && (await bcrypt.compare(password, user.password!));
-
+      
     if (!isPasswordValid) {
       if (user) {
         if (
@@ -246,8 +222,6 @@ export const protect = async (
 ): Promise<any> => {
   try {
     const token = req.cookies.jwt;
-
-    console.log("hello from protect");
 
     if (!token) {
       return res.status(401).json({ message: "Not authenticated" });
@@ -509,6 +483,7 @@ export const logout = (req: Request, res: Response) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
   });
+
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
