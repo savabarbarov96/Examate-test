@@ -1,6 +1,6 @@
 export async function login(username: string, password: string) {
   try {
-    const response = await fetch("http://auth-service.examate.net/api/auth/login", {
+    const response = await fetch("https://auth-service.examate.net/api/auth/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -28,7 +28,7 @@ export async function login(username: string, password: string) {
 
 export async function verify2FA(twoFAIDToken: string, twoFACode: string) {
   try {
-    const response = await fetch("http://auth-service.examate.net/api/auth/verify-2fa", {
+    const response = await fetch("https://auth-service.examate.net/api/auth/verify-2fa", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -55,7 +55,7 @@ export async function verify2FA(twoFAIDToken: string, twoFACode: string) {
 export async function sendResetEmail(
   email: string
 ): Promise<{ message: string }> {
-  const res = await fetch("http://auth-service.examate.net/api/auth/forgotPassword", {
+  const res = await fetch("https://auth-service.examate.net/api/auth/forgotPassword", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
@@ -71,7 +71,7 @@ export async function sendResetEmail(
 }
 
 export async function logout(): Promise<void> {
-  const res = await fetch("http://auth-service.examate.net/api/auth/logout", {
+  const res = await fetch("https://auth-service.examate.net/api/auth/logout", {
     method: "POST",
     credentials: "include",
   });
@@ -83,7 +83,7 @@ export async function logout(): Promise<void> {
 }
 
 export const verifyCode = async (email: string, code: string) => {
-  const res = await fetch(`http://auth-service.examate.net/api/auth/verify-code`, {
+  const res = await fetch(`https://auth-service.examate.net/api/auth/verify-code`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, code }),
@@ -102,7 +102,7 @@ export async function changePassword(
   email: string,
   newPassword: string
 ): Promise<any> {
-  const res = await fetch("http://auth-service.examate.net/api/auth/change-password", {
+  const res = await fetch("https://auth-service.examate.net/api/auth/change-password", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
