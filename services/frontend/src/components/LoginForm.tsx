@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/auth/button";
 import { Card, CardContent } from "@/components/ui/auth/card";
 import { Input } from "@/components/ui/auth/input";
 import { Label } from "@/components/ui/auth/label";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { login, verify2FA } from "@/utils/auth/helpers";
 
 import { AlertCircleIcon } from "lucide-react";
@@ -37,14 +37,15 @@ export function LoginForm({
   const navigate = useNavigate();
   const { setStatus, setUser } = useAuth();
 
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    if (isLoginInvalid) {
-      const timeout = setTimeout(() => {
-        setIsLoginInvalid(false);
-      }, 5000);
-      return () => clearTimeout(timeout);
-    }
-  }, [isLoginInvalid]);
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -56,9 +57,30 @@ export function LoginForm({
     return () => clearInterval(interval);
   }, [resendCooldown]);
 
+  const triggerAlert = (message: string) => {
+    setLoginFailMessage(message);
+    setIsLoginInvalid(true);
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      setIsLoginInvalid(false);
+    }, 5000);
+  };
+
+  const closeAlert = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    setIsLoginInvalid(false);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log(" helloo ");
       const { status, twoFAToken, message } = await login(username, password);
       const is2FARequired = status === "2fa_required";
 
@@ -67,14 +89,14 @@ export function LoginForm({
         setTwoFATempIDToken(twoFAToken);
       } else {
         setStatus("authenticated");
-        navigate("/all-users");
+        navigate("/dashboard");
       }
     } catch (err: unknown) {
       setIsLoginInvalid(true);
       if (err instanceof Error) {
-        setLoginFailMessage("An error occured, while trying to log in. Please try again");
+        triggerAlert(err.message);
       } else {
-        setLoginFailMessage("Unknown error");
+        triggerAlert("Unknown error");
       }
     }
   };
@@ -91,9 +113,9 @@ export function LoginForm({
       } catch (err) {
         setIsLoginInvalid(true);
         if (err instanceof Error) {
-          setLoginFailMessage(err.message);
+          triggerAlert(err.message);
         } else {
-          setLoginFailMessage("Unknown error");
+          triggerAlert("Unknown error");
         }
 
         setHasAttemptedVerification(true);
@@ -101,9 +123,7 @@ export function LoginForm({
       } finally {
         setIsVerifying(false);
       }
-    }
-
-    else if (hasAttemptedVerification && resendCooldown === 0) {
+    } else if (hasAttemptedVerification && resendCooldown === 0) {
       try {
         setResendCooldown(60);
         const { twoFAToken: newToken } = await login(username, password);
@@ -165,12 +185,20 @@ export function LoginForm({
                   </p>
                 </div>
 
-                {isLoginInvalid ? (
+                {isLoginInvalid && (
                   <Alert variant="destructive">
                     <AlertCircleIcon />
                     <AlertTitle>{loginFailMessage}</AlertTitle>
+                    <button
+                      type="button"
+                      className="absolute top-1.5 right-3 text-xl text-red-600 hover:text-red-800 transition-colors cursor-pointer"
+                      onClick={closeAlert}
+                      aria-label="Close alert"
+                    >
+                      ×
+                    </button>
                   </Alert>
-                ) : null}
+                )}
 
                 <div className="grid gap-2">
                   <Label htmlFor="username">Username</Label>

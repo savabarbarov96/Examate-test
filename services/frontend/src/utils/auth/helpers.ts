@@ -21,7 +21,6 @@ export async function login(username: string, password: string) {
 
     return data;
   } catch (error) {
-    console.error("Login error:", error);
     throw error;
   }
 }
@@ -82,7 +81,7 @@ export async function logout(): Promise<void> {
   }
 }
 
-export const verifyCode = async (email: string, code: string) => {
+export async function verifyCode(email: string, code: string) {
   const res = await fetch(`http://localhost:8081/api/auth/verify-code`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -96,7 +95,7 @@ export const verifyCode = async (email: string, code: string) => {
   }
 
   return data;
-};
+}
 
 export async function changePassword(
   email: string,
@@ -117,3 +116,25 @@ export async function changePassword(
 
   return data;
 }
+
+export const fetchActiveSessions = async () => {
+  try {
+    const res = await fetch(
+      `${
+        import.meta.env.VITE_API_URL || "http://localhost:8081"
+      }/api/session/count`,
+      { credentials: "include" }
+    );
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log({ data });
+
+    return data;
+  } catch (err) {
+    console.error("Failed to fetch active sessions:", err);
+  }
+};
