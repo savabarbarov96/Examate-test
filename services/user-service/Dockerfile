@@ -26,7 +26,7 @@ COPY --from=builder /app/package*.json ./
 RUN npm install
 
 # Expose app port (adjust if not 3000)
-EXPOSE 8081
+EXPOSE 5001
 
 # Start the app
 CMD ["node", "dist/server.js"]
