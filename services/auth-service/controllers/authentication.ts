@@ -2,11 +2,14 @@ import { NextFunction, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import * as crypto from "crypto";
-import { promisify } from "util";
+import { UAParser } from "ua-parser-js";
 
 import User, { IUser } from "../models/User.js";
 import { sendEmail } from "../utils/email.js";
 import { HydratedDocument } from "mongoose";
+import { createSession, terminateSession } from "../utils/session.js";
+import { geoReader } from "../utils/geo.js";
+import { recordLoginAttempt } from "../utils/logger.js";
 
 const signToken = (id: string) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -47,14 +50,14 @@ const createAndSendTokens = (user: HydratedDocument<IUser>, res: Response) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 8 * 60 * 60 * 1000,
+    maxAge: 15 * 60 * 1000,
   });
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 30 * 24 * 60 * 60 * 1000,
+    maxAge: 8 * 24 * 60 * 60 * 1000,
   });
 
   user.password = undefined!;
@@ -70,9 +73,39 @@ export const login = async (
   next: NextFunction
 ): Promise<any> => {
   try {
+    const ipHeader = req.headers["x-forwarded-for"] || req.ip;
+    const ip = Array.isArray(ipHeader) ? ipHeader[0] : ipHeader || req.ip;
+    const ipString = ip ?? "127.0.0.1";
+
+    const userAgent = req.headers["user-agent"] || "";
+    const { browser, cpu, device, os } = UAParser(userAgent);
+
+    let geoData: any = null;
+
+    try {
+      geoData = geoReader.city(ipString);
+    } catch (err: any) {
+      if (err.name === "AddressNotFoundError") {
+        console.warn(`Geo lookup failed for IP: ${ip}`);
+      } else {
+        throw err;
+      }
+    }
+    // console.log({ ip, geoData, deviceInfo });
+
+    console.log({ ip, geoData, browser, cpu, device, os });
+
     const { username, password } = req.body;
 
     if (!username || !password) {
+      await recordLoginAttempt({
+        username,
+        ip: ipString,
+        device: { browser, cpu, device, os },
+        status: "failed",
+        message: "Missing username or password",
+      });
+
       return res
         .status(400)
         .json({ message: "Please provide username and password!" });
@@ -81,6 +114,17 @@ export const login = async (
     const user = await User.findOne({ username }).select(
       "+password +twoFactorCode +twoFactorCodeExpires +twoFactorEnabled +status +isLocked +lockUntil"
     );
+
+    if (!user) {
+      await recordLoginAttempt({
+        username,
+        ip: ipString,
+        device: { browser, cpu, device, os },
+        status: "failed",
+        message: "Invalid username",
+      });
+      return res.status(401).json({ message: "Invalid username" });
+    }
 
     const now = new Date();
 
@@ -96,6 +140,15 @@ export const login = async (
     }
 
     if (user?.isLocked) {
+      await recordLoginAttempt({
+        userId: user._id.toString(),
+        username: user.username,
+        ip: ipString,
+        device: { browser, cpu, device, os },
+        status: "locked",
+        message: "Account is locked",
+      });
+
       return res.status(403).json({
         status: "locked",
         message:
@@ -105,35 +158,51 @@ export const login = async (
 
     const isPasswordValid =
       user && (await bcrypt.compare(password, user.password!));
-      
+
     if (!isPasswordValid) {
-      if (user) {
-        if (
-          user.lastFailedLoginAttempt &&
-          now.getTime() - user.lastFailedLoginAttempt.getTime() <= 60 * 1000
-        ) {
-          user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
-        } else {
-          user.failedLoginAttempts = 1;
-        }
+      if (
+        user.lastFailedLoginAttempt &&
+        now.getTime() - user.lastFailedLoginAttempt.getTime() <= 60 * 1000
+      ) {
+        user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+      } else {
+        user.failedLoginAttempts = 1;
+      }
 
-        user.lastFailedLoginAttempt = now;
+      user.lastFailedLoginAttempt = now;
 
-        if (user.failedLoginAttempts > 5) {
-          user.isLocked = true;
-          user.lockUntil = new Date(now.getTime() + 15 * 60 * 1000);
-
-          await user.save({ validateBeforeSave: false });
-
-          return res.status(403).json({
-            status: "locked",
-            message:
-              "Your account access has been restricted. Please contact your organization’s admin.",
-          });
-        }
+      if (user.failedLoginAttempts > 5) {
+        user.isLocked = true;
+        user.lockUntil = new Date(now.getTime() + 15 * 60 * 1000);
 
         await user.save({ validateBeforeSave: false });
+
+        await recordLoginAttempt({
+          userId: user._id.toString(),
+          username: user.username,
+          ip: ipString,
+          device: { browser, cpu, device, os },
+          status: "locked",
+          message: "Account locked due to too many failed login attempts",
+        });
+
+        return res.status(403).json({
+          status: "locked",
+          message:
+            "Your account access has been restricted. Please contact your organization’s admin.",
+        });
       }
+
+      await user.save({ validateBeforeSave: false });
+
+      await recordLoginAttempt({
+        userId: user._id.toString(),
+        username: user.username,
+        ip: ipString,
+        device: { browser, cpu, device, os },
+        status: "failed",
+        message: "Invalid credentials",
+      });
 
       console.log("Invalid credentials.");
       return res.status(401).json({ message: "Invalid credentials." });
@@ -155,7 +224,17 @@ export const login = async (
     }
 
     if (user.status === "unverified") {
+      await recordLoginAttempt({
+        userId: user._id.toString(),
+        username: user.username,
+        ip: ipString,
+        device: { browser, cpu, device, os },
+        status: "unverified",
+        message: "User account is unverified",
+      });
+
       console.log("Unverified account login attempt");
+
       return res.status(403).json({
         status: "unverified",
         message:
@@ -163,7 +242,24 @@ export const login = async (
       });
     }
 
+    await recordLoginAttempt({
+      userId: user._id.toString(),
+      username: user.username,
+      ip: ipString,
+      device: { browser, cpu, device, os },
+      geo: geoData,
+      status: "success",
+      message: "Login successful",
+    });
+
     if (!user.twoFactorEnabled) {
+      const session = await createSession(user._id.toString());
+      res.cookie("sessionId", session.sessionId, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      });
+
       createAndSendTokens(user, res);
       return;
     }
@@ -253,6 +349,19 @@ export const verify2fa = async (
 ): Promise<any> => {
   try {
     const authHeader = req.headers.authorization;
+    const ipHeader = req.headers["x-forwarded-for"] || req.ip;
+    const ip = Array.isArray(ipHeader) ? ipHeader[0] : ipHeader || req.ip;
+    const ipString = ip ?? "127.0.0.1";
+
+    const userAgent = req.headers["user-agent"] || "";
+    const { browser, cpu, device, os } = UAParser(userAgent);
+
+    let geoData: any = null;
+    try {
+      geoData = geoReader.city(ipString);
+    } catch (err: any) {
+      if (err.name !== "AddressNotFoundError") throw err;
+    }
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Missing or invalid token" });
@@ -303,6 +412,9 @@ export const verify2fa = async (
     if (hashedCode !== user.twoFactorCode) {
       user.failed2FAAttempts = (user.failed2FAAttempts || 0) + 1;
 
+      let attemptStatus: "failed" | "locked" = "failed";
+      let attemptMessage = "Invalid 2FA code";
+
       if (user.failed2FAAttempts >= 10) {
         user.lockUntil = new Date(Date.now() + 30 * 60 * 1000);
         user.isLocked = true;
@@ -310,6 +422,19 @@ export const verify2fa = async (
         user.twoFactorCode = undefined;
         user.twoFactorCodeExpires = undefined;
         await user.save({ validateBeforeSave: false });
+
+        attemptStatus = "locked";
+        attemptMessage = "Account locked due to too many failed 2FA attempts";
+
+        await recordLoginAttempt({
+          userId: user._id.toString(),
+          username: user.username,
+          ip: ipString,
+          device: { browser, cpu, device, os },
+          geo: geoData,
+          status: attemptStatus,
+          message: attemptMessage,
+        });
 
         return res.status(403).json({
           status: "locked",
@@ -319,6 +444,17 @@ export const verify2fa = async (
       }
 
       await user.save({ validateBeforeSave: false });
+
+      await recordLoginAttempt({
+        userId: user._id.toString(),
+        username: user.username,
+        ip: ipString,
+        device: { browser, cpu, device, os },
+        geo: geoData,
+        status: "failed",
+        message: attemptMessage,
+      });
+
       return res.status(401).json({ message: "Invalid 2FA code" });
     }
 
@@ -326,6 +462,24 @@ export const verify2fa = async (
     user.twoFactorCode = undefined;
     user.twoFactorCodeExpires = undefined;
     await user.save({ validateBeforeSave: false });
+
+    await recordLoginAttempt({
+      userId: user._id.toString(),
+      username: user.username,
+      ip: ipString,
+      device: { browser, cpu, device, os },
+      geo: geoData,
+      status: "success",
+      message: "2FA verified successfully",
+    });
+
+    const session = await createSession(user._id.toString());
+
+    res.cookie("sessionId", session.sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    });
 
     createAndSendTokens(user, res);
   } catch (error) {
@@ -468,7 +622,7 @@ export const refreshAccessToken = async (
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 8 * 60 * 60 * 1000,
+      maxAge: 15 * 60 * 1000,
     });
 
     res.status(200).json({ message: "Token refreshed" });
@@ -477,7 +631,14 @@ export const refreshAccessToken = async (
   }
 };
 
-export const logout = (req: Request, res: Response) => {
+export const logout = async (req: Request, res: Response) => {
+  const sessionId = req.cookies.sessionId;
+
+  if (sessionId) {
+    await terminateSession(sessionId);
+    res.clearCookie("sessionId");
+  }
+
   res.clearCookie("jwt", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -492,3 +653,20 @@ export const logout = (req: Request, res: Response) => {
 
   res.status(200).json({ message: "Logged out successfully" });
 };
+
+async function getLocation(ip: string) {
+  try {
+    const response = await geoReader.city(ip);
+
+    return {
+      country: response?.country?.isoCode ?? null,
+      countryName: response?.country?.names?.en ?? null,
+      city: response?.city?.names?.en ?? null,
+      latitude: response?.location?.latitude ?? null,
+      longitude: response?.location?.longitude ?? null,
+    };
+  } catch (err) {
+    console.error("Geo lookup failed:", err);
+    return null;
+  }
+}

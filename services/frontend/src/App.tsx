@@ -17,17 +17,13 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route
-            element={
-              <ProtectedRoute>
-                <SidebarLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/all-users" element={<AllUsersPage />} />
-            <Route path="/create-user" element={<CreateUserPage />} />
-            <Route path="/all-roles" element={<AllUserRolesPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<SidebarLayout />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/all-users" element={<AllUsersPage />} />
+              <Route path="/create-user" element={<CreateUserPage />} />
+              <Route path="/all-roles" element={<AllUserRolesPage />} />
+            </Route>
           </Route>
 
           <Route path="/" element={<LoginPage />} />
