@@ -11,7 +11,7 @@ import {
   verify2fa,
   verifyResetCode,
 } from "../controllers/authentication.js";
-import { getMe } from "../controllers/user.js";
+import { getActiveSessions, getMe } from "../controllers/user.js";
 
 const router = express.Router();
 
@@ -26,20 +26,18 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-
 router.get("/refresh", refreshAccessToken);
 
 router.post("/login", 
-  // loginLimiter, 
+  // loginLimiter 
   login);
 router.post("/verify-2fa", verify2fa);
 
 router.post("/logout", logout);
 
 router.post("/forgotPassword", 
-  // loginLimiter, 
+  // loginLimiter,
   forgotPassword);
-// router.patch("/resetPassword/:token", resetPassword);
 router.post("/verify-code", verifyResetCode);
 router.patch("/change-password", changePassword);
 

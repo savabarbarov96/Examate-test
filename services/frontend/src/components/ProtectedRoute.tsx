@@ -1,13 +1,9 @@
 import { useAuth } from "@/contexts/AuthProvider";
 import { ReactNode } from "react";
-import { Navigate } from "react-router";
+import { Navigate, Outlet } from "react-router";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function ProtectedRoute({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function ProtectedRoute() {
   const { status } = useAuth();
 
   if (status === "checking" || status === "idle") {
@@ -22,5 +18,5 @@ export default function ProtectedRoute({
     return <Navigate to="/" replace />;
   }
 
-  return <>{children}</>;
+  return <Outlet />;
 }

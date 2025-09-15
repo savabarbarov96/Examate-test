@@ -14,7 +14,7 @@ export type GetAllUsersResponse = {
 
 export const getAllUsers = async (): Promise<GetAllUsersResponse | null> => {
   try {
-    const res = await fetch("http://localhost:8082/api/users", {
+    const res = await fetch("https://user-service.examate.net/api/users", {
       credentials: "include",
     });
 
