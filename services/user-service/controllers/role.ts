@@ -2,20 +2,36 @@ import { Request, Response, NextFunction } from "express";
 import { RoleModel } from "../models/Role.js";
 import { invalidateUsersWithRole } from "../utils/forceLogout.js";
 
-export const createRole = async (req: Request, res: Response, next: NextFunction) => {
+export const createRole = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const { name, system, scope, permissions, restrictions } = req.body;
+    const { name, system, permissions, restrictions } = req.body;
     const existing = await RoleModel.findOne({ name });
-    if (existing) return res.status(400).json({ message: "Role already exists" });
+    if (existing)
+      return res.status(400).json({ message: "Role already exists" });
 
-    const role = await RoleModel.create({ name, system, scope, permissions, restrictions });
+    const role = await RoleModel.create({
+      name,
+      system: system ?? false,
+      scope: "client",
+      permissions: permissions || {},
+      restrictions: restrictions || {},
+    });
+
     return res.status(201).json({ message: "Role created", role });
   } catch (err) {
     next(err);
   }
 };
 
-export const updateRole = async (req: Request, res: Response, next: NextFunction) => {
+export const updateRole = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { roleId } = req.params;
     const { name, permissions, restrictions } = req.body;
@@ -37,16 +53,31 @@ export const updateRole = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const getRoles = async (req: Request, res: Response, next: NextFunction) => {
+export const getRoles = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const roles = await RoleModel.find().sort({ createdAt: -1 });
+    let query = {};
+
+    if (req.user?.role?.name !== "Sys Admin") {
+      query = { scope: "client" };
+    }
+
+    const roles = await RoleModel.find(query).sort({ createdAt: -1 });
     return res.status(200).json({ roles });
   } catch (err) {
     next(err);
   }
 };
 
-export const deleteRole = async (req: Request, res: Response, next: NextFunction) => {
+
+export const deleteRole = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { roleId } = req.params;
 

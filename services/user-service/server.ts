@@ -4,6 +4,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
+import { initializeRoles } from "./utils/seedRoles.js";
+
 import userRoutes from "./routes/user.js";
 import roleRoutes from "./routes/role.js";
 
@@ -37,7 +39,11 @@ app.use(cookieParser());
 
 mongoose
   .connect(process.env.MONGO_URI as string)
-  .then(() => console.log("MongoDB connected"))
+  .then(async () => {
+    console.log("MongoDB connected");
+
+    await initializeRoles(); 
+  })
   .catch((err) => console.error(err));
 
 app.get("/", (req, res) => {
