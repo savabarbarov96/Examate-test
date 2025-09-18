@@ -1,5 +1,5 @@
 "use client";
-import * as React from "react";
+import { useState, useEffect } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -34,6 +34,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getAllUsers } from "@/utils/users/helpers";
+import { AlertCircleIcon } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export type User = {
   _id: string;
@@ -149,16 +151,14 @@ export const columns: ColumnDef<User>[] = [
 ];
 
 export default function AllUsers() {
-  const [data, setData] = React.useState<User[]>([]);
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState({});
+  const [data, setData] = useState<User[]>([]);
+  const [showAlert, setShowAlert] = useState(false);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState({});
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchUsers = async () => {
       try {
         const res = await getAllUsers();
@@ -191,6 +191,17 @@ export default function AllUsers() {
 
   return (
     <div className="w-full">
+      {showAlert && (
+        <div className="">
+          <Alert variant="destructive">
+            <AlertCircleIcon />
+            <AlertTitle>Cannot hide last column</AlertTitle>
+            <AlertDescription>
+              At least one column must remain visible.
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
       <div className="flex items-center py-4 gap-4">
         <Input
           placeholder="Filter by email..."
@@ -210,16 +221,30 @@ export default function AllUsers() {
             {table
               .getAllColumns()
               .filter((col) => col.getCanHide())
-              .map((col) => (
-                <DropdownMenuCheckboxItem
-                  key={col.id}
-                  checked={col.getIsVisible()}
-                  onCheckedChange={(value) => col.toggleVisibility(!!value)}
-                  className="capitalize"
-                >
-                  {col.id}
-                </DropdownMenuCheckboxItem>
-              ))}
+              .map((col) => {
+                const visibleColumns = table
+                  .getAllColumns()
+                  .filter((c) => c.getIsVisible());
+                const isLastVisible = visibleColumns.length === 3;
+
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={col.id}
+                    checked={col.getIsVisible()}
+                    onSelect={(e) => e.preventDefault()}
+                    onCheckedChange={(value) => {
+                      if (isLastVisible && !value) {
+                        setShowAlert(true); // show toast alert
+                        return;
+                      }
+                      col.toggleVisibility(!!value);
+                    }}
+                    className="capitalize"
+                  >
+                    {col.id}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

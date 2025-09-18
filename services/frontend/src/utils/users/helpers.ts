@@ -14,14 +14,12 @@ export type GetAllUsersResponse = {
 
 export const getAllUsers = async (): Promise<GetAllUsersResponse | null> => {
   try {
-    const res = await fetch("https://user-service.examate.net/api/users", {
+    const res = await fetch("http://localhost:8082/api/users"
+      // "https://user-service.examate.net/api/users"
+      , {
       credentials: "include",
     });
-
-    if (!res.ok) {
-      throw new Error(`Failed to fetch users: ${res.status}`);
-    }
-
+    if (!res.ok) throw new Error(`Failed to fetch users: ${res.status}`);
     const data = await res.json();
     return data;
   } catch (err) {

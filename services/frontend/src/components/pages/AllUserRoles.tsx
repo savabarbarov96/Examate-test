@@ -1,4 +1,4 @@
-import { UserRoles } from "@/components/AllUserRolesTable";
+import UserRoles from "@/components/AllUserRolesTable";
 import { Card, CardContent } from "@/components/ui/auth/card";
 
 const UserRolesPage = () => {
@@ -17,4 +17,3 @@ const UserRolesPage = () => {
 };
 
 export default UserRolesPage;
-

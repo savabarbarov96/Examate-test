@@ -87,14 +87,9 @@ export const login = async (
     } catch (err: any) {
       if (err.name === "AddressNotFoundError") {
         console.warn(`Geo lookup failed for IP: ${ip}`);
-      } else {
-        throw err;
       }
     }
-    // console.log({ ip, geoData, deviceInfo });
-
-    console.log({ ip, geoData, browser, cpu, device, os });
-
+  
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -138,7 +133,7 @@ export const login = async (
         `User ${user.username} unlocked automatically after lock expired.`
       );
     }
-
+    
     if (user?.isLocked) {
       await recordLoginAttempt({
         userId: user._id.toString(),
@@ -253,12 +248,12 @@ export const login = async (
     });
 
     if (!user.twoFactorEnabled) {
-      const session = await createSession(user._id.toString());
-      res.cookie("sessionId", session.sessionId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      });
+      // const session = await createSession(user._id.toString());
+      // res.cookie("sessionId", session.sessionId, {
+      //   httpOnly: true,
+      //   secure: process.env.NODE_ENV === "production",
+      //   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      // });
 
       createAndSendTokens(user, res);
       return;
