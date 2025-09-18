@@ -92,17 +92,6 @@ export default function SidebarLayout() {
                     <span>All Roles</span>
                   </NavLink>
 
-                  <NavLink
-                    to="/dashboard"
-                    className={({ isActive }) =>
-                      `flex items-center gap-2 px-2 py-1 rounded-md transition-colors ${
-                        isActive ? "bg-muted text-primary font-semibold" : "hover:bg-muted"
-                      }`
-                    }
-                  >
-                    <ShieldPlus size={16} />
-                    <span>Create Role</span>
-                  </NavLink>
                 </div>
               )}
             </SidebarMenuItem>

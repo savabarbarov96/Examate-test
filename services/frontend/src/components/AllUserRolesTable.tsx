@@ -31,18 +31,10 @@ import AddRoleDialog from "@/components/AddRole";
 import {
   getAllRoles,
   deleteRole,
-  updateRole,
   Role,
 } from "@/utils/roles/helpers";
 
-const modules = [
-  "admin",
-  "users",
-  "exams",
-  "examType",
-  "questions",
-  "statistics",
-];
+const modules = ["admin", "users", "exams", "examType", "questions", "statistics"];
 const moduleOperations: Record<string, ("view" | "create" | "edit")[]> = {
   admin: ["view", "create", "edit"],
   users: ["view", "create", "edit"],
@@ -57,6 +49,7 @@ export default function UserRoles() {
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
+  const [openAddDialog, setOpenAddDialog] = useState(false);
 
   const fetchRoles = async () => {
     const data = await getAllRoles();
@@ -67,7 +60,6 @@ export default function UserRoles() {
     fetchRoles();
   }, []);
 
-  // Close actions when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (!(e.target as HTMLElement).closest(".actions-cell")) {
@@ -80,7 +72,6 @@ export default function UserRoles() {
 
   const confirmDeleteRole = async () => {
     if (!roleToDelete) return;
-
     const success = await deleteRole(roleToDelete._id);
     if (success) {
       setRoles((prev) => prev.filter((r) => r._id !== roleToDelete._id));
@@ -108,10 +99,7 @@ export default function UserRoles() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-semibold">User Roles</h1>
-        <AddRoleDialog
-          onClose={() => {}}
-          onSave={(role) => setRoles((prev) => [...prev, role])}
-        />
+        <Button onClick={() => setOpenAddDialog(true)}>Add Role</Button>
       </div>
 
       <div className="overflow-x-auto">
@@ -132,7 +120,6 @@ export default function UserRoles() {
             {roles.map((role) => (
               <TableRow key={role._id}>
                 <TableCell className="font-medium">{role.name}</TableCell>
-
                 {modules.map((module) => (
                   <TableCell key={module} className="text-center">
                     <div
@@ -143,10 +130,7 @@ export default function UserRoles() {
                     >
                       {moduleOperations[module].map((op) =>
                         role.permissions[module]?.includes(op) ? (
-                          <CheckIcon
-                            key={op}
-                            className="w-4 h-4 text-green-500"
-                          />
+                          <CheckIcon key={op} className="w-4 h-4 text-green-500" />
                         ) : (
                           <XIcon key={op} className="w-4 h-4 text-red-400" />
                         )
@@ -154,7 +138,6 @@ export default function UserRoles() {
                     </div>
                   </TableCell>
                 ))}
-
                 <TableCell className="text-center actions-cell relative">
                   {activeRowId === role._id ? (
                     <div
@@ -175,7 +158,6 @@ export default function UserRoles() {
                           </TooltipTrigger>
                           <TooltipContent>Delete</TooltipContent>
                         </Tooltip>
-
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -232,13 +214,24 @@ export default function UserRoles() {
         </AlertDialog>
       )}
 
-      {roleToEdit && (
-        <AddRoleDialog
-          role={roleToEdit}
-          onClose={() => setRoleToEdit(null)}
-          onSave={handleSaveRole}
-        />
-      )}
+      <AddRoleDialog
+        role={roleToEdit || undefined}
+        open={!!roleToEdit}
+        onClose={() => setRoleToEdit(null)}
+        onSave={handleSaveRole}
+      />
+
+      <AddRoleDialog
+        open={openAddDialog}
+        onClose={() => setOpenAddDialog(false)}
+        onSave={(role) => {
+          setRoles((prev) => [...prev, role]);
+          setOpenAddDialog(false);
+          toast(`Role "${role.name}" added.`, {
+            description: "The role has been successfully created.",
+          });
+        }}
+      />
     </div>
   );
 }
