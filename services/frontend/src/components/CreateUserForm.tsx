@@ -41,8 +41,6 @@ export function CreateUserForm() {
     }
 
     setError("");
-    console.log({ firstName, lastName, email, username, role, client, phone });
-
     setSuccess(true);
 
     setTimeout(() => {

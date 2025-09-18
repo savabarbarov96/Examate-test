@@ -2,7 +2,6 @@ import { RoleModel } from "../models/Role.js";
 import { invalidateUsersWithRole } from "../utils/forceLogout.js";
 export const createRole = async (req, res, next) => {
     try {
-        console.log("createRole is working");
         const { name, system, scope, permissions, restrictions } = req.body;
         const existing = await RoleModel.findOne({ name });
         if (existing)
@@ -18,7 +17,6 @@ export const updateRole = async (req, res, next) => {
     try {
         const { roleId } = req.params;
         const { name, permissions, restrictions } = req.body;
-        console.log({ name, permissions, restrictions, roleId });
         const role = await RoleModel.findById(roleId);
         if (!role)
             return res.status(404).json({ message: "Role not found" });
@@ -45,7 +43,6 @@ export const getRoles = async (req, res, next) => {
 export const deleteRole = async (req, res, next) => {
     try {
         const { roleId } = req.params;
-        console.log({ roleId });
         const role = await RoleModel.findById(roleId);
         if (!role) {
             return res.status(404).json({ message: "Role not found" });
@@ -53,8 +50,7 @@ export const deleteRole = async (req, res, next) => {
         if (role.system) {
             return res.status(403).json({ message: "Cannot delete system role" });
         }
-        console.log({ role });
-        // await role.deleteOne();
+        await role.deleteOne();
         return res.status(200).json({ message: "Role deleted" });
     }
     catch (err) {

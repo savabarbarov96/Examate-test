@@ -80,7 +80,6 @@ export function LoginForm({
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      console.log(" helloo ");
       const { status, twoFAToken, message } = await login(username, password);
       const is2FARequired = status === "2fa_required";
 

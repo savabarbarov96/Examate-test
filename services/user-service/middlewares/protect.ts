@@ -11,8 +11,6 @@ export const protect = async (
   try {
     const token = req.cookies.jwt;
 
-    console.log({ token });
-    
     if (!token) {
       return res.status(401).json({ message: "Not authenticated" });
     }

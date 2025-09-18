@@ -4,8 +4,6 @@ const BASE_URL =
 async function handleResponse(res: Response) {
   const data = await res.json();
 
-  console.log(" handling response");
-  
   if (!res.ok) {
     throw new Error(data.message || "Request failed");
   }

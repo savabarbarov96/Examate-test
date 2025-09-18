@@ -189,12 +189,12 @@ export const login = async (req, res, next) => {
             message: "Login successful",
         });
         if (!user.twoFactorEnabled) {
-            // const session = await createSession(user._id.toString());
-            // res.cookie("sessionId", session.sessionId, {
-            //   httpOnly: true,
-            //   secure: process.env.NODE_ENV === "production",
-            //   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            // });
+            const session = await createSession(user._id.toString());
+            res.cookie("sessionId", session.sessionId, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            });
             createAndSendTokens(user, res);
             return;
         }
@@ -437,7 +437,7 @@ export const changePassword = async (req, res) => {
         user.verificationCode = undefined;
         user.verificationCodeExpires = undefined;
         await user.save({ validateBeforeSave: false });
-        // createAndSendTokens(user, res);
+        createAndSendTokens(user, res);
         return res
             .status(200)
             .json({ message: "Your password has been updated successfully." });
