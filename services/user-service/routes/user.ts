@@ -26,12 +26,13 @@ router.post("/", protect,
 
 // UPDATE
 router.put("/:id", protect, 
-  // checkPermission("users", "update"), 
+  // checkPermission("users", "edit"), 
   updateUser);
 
 // DELETE
-router.delete("/:id", protect, 
-  // checkPermission("users", "delete"),
+router.delete("/:id", 
+  // protect, 
+  checkPermission("users", "edit"),
   deleteUser);
 
 export default router;

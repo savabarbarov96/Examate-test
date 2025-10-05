@@ -7,6 +7,8 @@ export interface IUserMethods {
 }
 
 export interface IUser extends IUserMethods {
+  firstName: string;
+  lastName: string;
   email: string;
   username: string;
   status: string;
@@ -32,6 +34,8 @@ export interface IUser extends IUserMethods {
 
 const userSchema = new mongoose.Schema<IUser>(
   {
+    firstName: { type: String, trim: true, maxlength: 30 },
+    lastName: { type: String, trim: true, maxlength: 30 },
     email: { type: String, unique: true },
     username: {
       type: String,

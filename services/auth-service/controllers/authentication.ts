@@ -254,7 +254,7 @@ export const login = async (
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       });
-
+      
       createAndSendTokens(user, res);
       return;
     }

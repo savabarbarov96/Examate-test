@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -12,18 +12,9 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, Trash2, Edit2, MoreHorizontal, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/auth/input";
 import {
   Table,
@@ -33,9 +24,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getAllUsers } from "@/utils/users/helpers";
-import { AlertCircleIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+
+import { getAllUsers, deleteUser } from "@/utils/users/helpers";
 
 export type User = {
   _id: string;
@@ -47,128 +55,153 @@ export type User = {
   client?: string;
 };
 
-export const columns: ColumnDef<User>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "first_name",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        First Name <ArrowUpDown />
-      </Button>
-    ),
-    cell: ({ row }) => row.getValue("first_name") || "N/A",
-  },
-  {
-    accessorKey: "last_name",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Last Name <ArrowUpDown />
-      </Button>
-    ),
-    cell: ({ row }) => row.getValue("last_name") || "N/A",
-  },
-  {
-    accessorKey: "email",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Email <ArrowUpDown />
-      </Button>
-    ),
-    cell: ({ row }) => row.getValue("email") || "N/A",
-  },
-  {
-    accessorKey: "username",
-    header: "Username",
-    cell: ({ row }) => row.getValue("username") || "N/A",
-  },
-  {
-    accessorKey: "role",
-    header: "Role",
-    cell: ({ row }) => row.getValue("role") || "N/A",
-  },
-  {
-    accessorKey: "client",
-    header: "Client",
-    cell: ({ row }) => row.getValue("client") || "N/A",
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const user = row.original;
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(user._id)}
-            >
-              Copy user ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View user details</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
-];
-
-export default function AllUsers() {
+export default function AllUsers({ loggedInUserRole }: { loggedInUserRole: string }) {
   const [data, setData] = useState<User[]>([]);
   const [showAlert, setShowAlert] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
+  const [activeRowId, setActiveRowId] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
+  // fetch users from backend
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const res = await getAllUsers();
-        if (res?.data) setData(res.data);
+        if (res) {
+          const filtered = loggedInUserRole === "Client Admin"
+            ? res.filter((u: User) => u.role !== "Sys Admin")
+            : res;
+          setData(filtered);
+        }
       } catch (err) {
         console.error("Failed to fetch users:", err);
       }
     };
     fetchUsers();
+  }, [loggedInUserRole]);
+
+  // close actions menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest(".actions-cell")) {
+        setActiveRowId(null);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    try {
+      const success = await deleteUser(userToDelete._id);
+      if (success) {
+        setData((prev) => prev.filter((u) => u._id !== userToDelete._id));
+        toast(`User "${userToDelete.username}" deleted.`, {
+          description: "The user has been successfully removed.",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to delete user:", err);
+      toast.error("Failed to delete user.");
+    }
+
+    setUserToDelete(null);
+  };
+
+  const columns: ColumnDef<User>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    { accessorKey: "first_name", header: "First Name", cell: ({ row }) => row.getValue("first_name") || "N/A" },
+    { accessorKey: "last_name", header: "Last Name", cell: ({ row }) => row.getValue("last_name") || "N/A" },
+    { accessorKey: "email", header: "Email", cell: ({ row }) => row.getValue("email") || "N/A" },
+    { accessorKey: "username", header: "Username", cell: ({ row }) => row.getValue("username") || "N/A" },
+    { accessorKey: "role", header: "Role", cell: ({ row }) => row.getValue("role") || "N/A" },
+    { accessorKey: "client", header: "Client", cell: ({ row }) => row.getValue("client") || "N/A" },
+    {
+      id: "actions",
+      enableHiding: false,
+      header: () => <span>Actions</span>,
+      cell: ({ row }) => {
+        const user = row.original;
+        const canManage = loggedInUserRole === "Sys Admin" || user.role !== "Sys Admin";
+        const isActive = activeRowId === row.id;
+
+        if (!canManage) return null;
+
+        return (
+          <div className="relative actions-cell">
+            {isActive ? (
+              <div className="flex gap-2 justify-center" onClick={(e) => e.stopPropagation()}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600"
+                        onClick={() => setUserToDelete(user)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => console.log("Edit user:", user._id)}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Edit</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveRowId(row.id);
+                }}
+              >
+                <MoreHorizontal className="w-5 h-5" />
+              </Button>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
 
   const table = useReactTable({
     data,
@@ -181,72 +214,26 @@ export default function AllUsers() {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-    },
+    state: { sorting, columnFilters, columnVisibility, rowSelection },
   });
 
   return (
     <div className="w-full">
       {showAlert && (
-        <div className="">
-          <Alert variant="destructive">
-            <AlertCircleIcon />
-            <AlertTitle>Cannot hide last column</AlertTitle>
-            <AlertDescription>
-              At least one column must remain visible.
-            </AlertDescription>
-          </Alert>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle />
+          <AlertTitle>Cannot hide last column</AlertTitle>
+          <AlertDescription>At least one column must remain visible.</AlertDescription>
+        </Alert>
       )}
+
       <div className="flex items-center py-4 gap-4">
         <Input
           placeholder="Filter by email..."
           value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-          onChange={(e) =>
-            table.getColumn("email")?.setFilterValue(e.target.value)
-          }
+          onChange={(e) => table.getColumn("email")?.setFilterValue(e.target.value)}
           className="max-w-sm"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((col) => col.getCanHide())
-              .map((col) => {
-                const visibleColumns = table
-                  .getAllColumns()
-                  .filter((c) => c.getIsVisible());
-                const isLastVisible = visibleColumns.length === 3;
-
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={col.id}
-                    checked={col.getIsVisible()}
-                    onSelect={(e) => e.preventDefault()}
-                    onCheckedChange={(value) => {
-                      if (isLastVisible && !value) {
-                        setShowAlert(true); // show toast alert
-                        return;
-                      }
-                      col.toggleVisibility(!!value);
-                    }}
-                    className="capitalize"
-                  >
-                    {col.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
       <div className="overflow-hidden rounded-md border">
@@ -258,10 +245,7 @@ export default function AllUsers() {
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                      : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -270,26 +254,17 @@ export default function AllUsers() {
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>
@@ -298,26 +273,33 @@ export default function AllUsers() {
         </Table>
       </div>
 
+      {userToDelete && (
+        <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete User</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete the user "{userToDelete.username}"?
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteUser}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="text-muted-foreground flex-1 text-sm">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
         <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
+          <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
             Previous
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
+          <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
             Next
           </Button>
         </div>

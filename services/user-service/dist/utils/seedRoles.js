@@ -1,9 +1,7 @@
 import { RoleModel, predefinedRoles } from "../models/Role.js";
 export async function initializeRoles() {
     try {
-        const collections = (await RoleModel.db.listCollections().toArray?.()) ??
-            (await RoleModel.db.listCollections());
-        console.log({ collections });
+        const collections = await RoleModel.db.listCollections();
         const roleCollectionExists = collections.some((col) => col.name === RoleModel.collection.name);
         if (!roleCollectionExists) {
             console.log("Roles collection not found. Seeding predefined roles...");

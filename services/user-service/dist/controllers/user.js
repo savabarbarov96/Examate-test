@@ -1,11 +1,11 @@
+import crypto from "crypto";
 import User from "../models/User.js";
-import { RoleModel } from "../models/Role.js";
 // GET all users (requires "view" permission)
 export const getAllUsers = async (req, res, next) => {
     try {
         const users = await User.find()
-            .select("first_name last_name email status createdAt username role")
-            .populate("role", "name permissions")
+            .select("first_name last_name email status createdAt username ") // Add role
+            // .populate("role", "name permissions")
             .lean();
         res.status(200).json({
             status: "success",
@@ -34,8 +34,19 @@ export const getUserById = async (req, res, next) => {
 // CREATE user (requires "create" permission)
 export const createUser = async (req, res, next) => {
     try {
-        const { email, username, password, passwordConfirm, role } = req.body;
-        const user = await User.create({ email, username, password, passwordConfirm, role });
+        const { email, username, role, firstName, lastName, client, phone } = req.body;
+        const tempPassword = crypto.randomBytes(12).toString("base64url");
+        const user = await User.create({
+            email,
+            username,
+            role,
+            firstName,
+            lastName,
+            client,
+            phone,
+            password: tempPassword,
+            passwordConfirm: tempPassword,
+        });
         res.status(201).json({ status: "success", data: user });
     }
     catch (err) {
@@ -58,20 +69,18 @@ export const updateUser = async (req, res, next) => {
 };
 // DELETE user (requires "delete" permission)
 export const deleteUser = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const user = await User.findById(id);
-        if (!user)
-            return res.status(404).json({ message: "User not found" });
-        // Prevent deleting admins if restricted
-        const role = await RoleModel.findById(user.role);
-        if (role?.restrictions?.cannotManageSysAdmin) {
-            return res.status(403).json({ message: "Cannot delete admin users" });
-        }
-        await user.deleteOne();
-        res.status(200).json({ status: "success", message: "User deleted" });
-    }
-    catch (err) {
-        next(err);
-    }
+    // try {
+    //   const { id } = req.params;
+    //   const user = await User.findById(id);
+    //   if (!user) return res.status(404).json({ message: "User not found" });
+    //   // Prevent deleting admins if restricted
+    //   const role = await RoleModel.findById(user.role);
+    //   if (role?.restrictions?.cannotManageSysAdmin) {
+    //     return res.status(403).json({ message: "Cannot delete admin users" });
+    //   }
+    //   await user.deleteOne();
+    //   res.status(200).json({ status: "success", message: "User deleted" });
+    // } catch (err) {
+    //   next(err);
+    // }
 };

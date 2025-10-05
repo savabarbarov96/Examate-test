@@ -1,14 +1,19 @@
 import { Request, Response, NextFunction } from "express";
+import crypto from "crypto";
 
 import User from "../models/User.js";
 import { RoleModel } from "../models/Role.js";
 
 // GET all users (requires "view" permission)
-export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
+export const getAllUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const users = await User.find()
-      .select("first_name last_name email status createdAt username role")
-      .populate("role", "name permissions")
+      .select("first_name last_name email status createdAt username ") // Add role
+      // .populate("role", "name permissions")
       .lean();
 
     res.status(200).json({
@@ -22,7 +27,11 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
 };
 
 // GET single user (requires "view" permission)
-export const getUserById = async (req: Request, res: Response, next: NextFunction) => {
+export const getUserById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const user = await User.findById(req.params.id)
       .select("first_name last_name email status createdAt username role")
@@ -37,10 +46,29 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
 };
 
 // CREATE user (requires "create" permission)
-export const createUser = async (req: Request, res: Response, next: NextFunction) => {
+export const createUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const { email, username, password, passwordConfirm, role } = req.body;
-    const user = await User.create({ email, username, password, passwordConfirm, role });
+    const { email, username, role, firstName, lastName, client, phone } =
+      req.body;
+
+    const tempPassword = crypto.randomBytes(12).toString("base64url");
+
+    const user = await User.create({
+      email,
+      username,
+      role,
+      firstName,
+      lastName,
+      client,
+      phone,
+      password: tempPassword,
+      passwordConfirm: tempPassword,
+    });
+
     res.status(201).json({ status: "success", data: user });
   } catch (err) {
     next(err);
@@ -48,7 +76,11 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
 };
 
 // UPDATE user (requires "update" permission)
-export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
+export const updateUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -63,22 +95,26 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
 };
 
 // DELETE user (requires "delete" permission)
-export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.params;
+export const deleteUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  // try {
+  //   const { id } = req.params;
 
-    const user = await User.findById(id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+  //   const user = await User.findById(id);
+  //   if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Prevent deleting admins if restricted
-    const role = await RoleModel.findById(user.role);
-    if (role?.restrictions?.cannotManageSysAdmin) {
-      return res.status(403).json({ message: "Cannot delete admin users" });
-    }
+  //   // Prevent deleting admins if restricted
+  //   const role = await RoleModel.findById(user.role);
+  //   if (role?.restrictions?.cannotManageSysAdmin) {
+  //     return res.status(403).json({ message: "Cannot delete admin users" });
+  //   }
 
-    await user.deleteOne();
-    res.status(200).json({ status: "success", message: "User deleted" });
-  } catch (err) {
-    next(err);
-  }
+  //   await user.deleteOne();
+  //   res.status(200).json({ status: "success", message: "User deleted" });
+  // } catch (err) {
+  //   next(err);
+  // }
 };

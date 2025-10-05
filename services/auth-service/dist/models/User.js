@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 const userSchema = new mongoose.Schema({
+    firstName: { type: String, trim: true, maxlength: 30 },
+    lastName: { type: String, trim: true, maxlength: 30 },
     email: { type: String, unique: true },
     username: {
         type: String,
@@ -42,11 +44,13 @@ const userSchema = new mongoose.Schema({
     role: { type: mongoose.Schema.Types.ObjectId, ref: "Role", required: true },
 }, { timestamps: true });
 userSchema.pre("save", async function (next) {
-    if (!this.isModified("password") || this.isNew)
+    if (!this.isModified("password"))
         return next();
     this.password = await bcrypt.hash(this.password, 12);
     this.passwordConfirm = undefined;
-    this.passwordChangedAt = new Date(Date.now() - 1000);
+    if (!this.isNew) {
+        this.passwordChangedAt = new Date(Date.now() - 1000);
+    }
     next();
 });
 userSchema.methods.changePasswordAfter = function (JWTTimestamp) {

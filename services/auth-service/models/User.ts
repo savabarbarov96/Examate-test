@@ -1,12 +1,14 @@
 import mongoose, { ObjectId } from "mongoose";
 import bcrypt from "bcryptjs";
-import { IRole } from "./Role";
+import { IRole } from "./Role.js";
 
 export interface IUserMethods {
   changePasswordAfter(JWTTimestamp: number): boolean;
 }
 
 export interface IUser extends IUserMethods {
+  firstName: string;
+  lastName: string;
   email: string;
   username: string;
   status: string;
@@ -32,6 +34,8 @@ export interface IUser extends IUserMethods {
 
 const userSchema = new mongoose.Schema<IUser>(
   {
+    firstName: { type: String, trim: true, maxlength: 30 },
+    lastName: { type: String, trim: true, maxlength: 30 },
     email: { type: String, unique: true },
     username: {
       type: String,
@@ -76,12 +80,18 @@ const userSchema = new mongoose.Schema<IUser>(
 );
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password") || this.isNew) return next();
+  if (!this.isModified("password")) return next();
+
   this.password = await bcrypt.hash(this.password, 12);
   this.passwordConfirm = undefined;
-  this.passwordChangedAt = new Date(Date.now() - 1000);
+
+  if (!this.isNew) {
+    this.passwordChangedAt = new Date(Date.now() - 1000);
+  }
+
   next();
 });
+
 
 userSchema.methods.changePasswordAfter = function (JWTTimestamp: number) {
   if (this.passwordChangedAt) {
