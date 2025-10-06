@@ -11,9 +11,13 @@ export interface IUser extends IUserMethods {
   lastName: string;
   email: string;
   username: string;
+  client: string;
+  dob?: Date;
+  profilePic?: string
   status: string;
   accountLocked: boolean;
   password: string;
+  phone?: string;
   passwordConfirm?: string;
   passwordChangedAt?: Date;
   passwordResetToken?: string;
@@ -49,6 +53,10 @@ const userSchema = new mongoose.Schema<IUser>(
         message: "Username contains invalid characters.",
       },
     },
+    client: { type: String, trim: true },
+    phone: { type: String, trim: true },
+    dob: { type: Date },
+    profilePic: { type: String },
     status: { type: String, default: "unverified" },
     accountLocked: { type: Boolean, default: false },
     password: { type: String, required: true, minlength: 8, select: false },

@@ -1,4 +1,6 @@
 import express from "express";
+import multer from "multer";
+
 import { protect } from "../middlewares/protect.js";
 import { checkPermission } from "../middlewares/permissions.js";
 import {
@@ -7,32 +9,52 @@ import {
   createUser,
   updateUser,
   deleteUser,
+  getCurrentUser,
 } from "../controllers/user.js";
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const router = express.Router();
 
 // READ
-router.get("/", protect, 
-  // checkPermission("users", "view"), 
-  getAllUsers);
-router.get("/:id", protect, 
-  // checkPermission("users", "view"), 
-  getUserById);
+router.get(
+  "/",
+  protect,
+  // checkPermission("users", "view"),
+  getAllUsers
+);
+router.get("/me", protect, getCurrentUser);
+router.get(
+  "/:id",
+  protect,
+  // checkPermission("users", "view"),
+  getUserById
+);
 
 // CREATE
-router.post("/", protect, 
-  // checkPermission("users", "create"), 
-  createUser);
+router.post(
+  "/",
+  protect,
+  // checkPermission("users", "create"),
+  upload.single("profilePic"),
+  createUser
+);
 
 // UPDATE
-router.put("/:id", protect, 
-  // checkPermission("users", "edit"), 
-  updateUser);
+router.put(
+  "/:id",
+  protect,
+  // checkPermission("users", "edit"),
+  updateUser
+);
 
 // DELETE
-router.delete("/:id", 
-  // protect, 
+router.delete(
+  "/:id",
+  // protect,
   checkPermission("users", "edit"),
-  deleteUser);
+  deleteUser
+);
 
 export default router;

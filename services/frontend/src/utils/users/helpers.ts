@@ -4,24 +4,21 @@ export type CreateUserPayload = {
   email: string;
   username: string;
   role: string;
-  firstName?: string;
-  lastName?: string;
-  client?: string;
+  firstName: string;
+  lastName: string;
+  client: string;
   phone?: string;
+  dob?: string;
+  profilePic?: File; // <-- now it's a File instead of string
 };
 
-export type UpdateUserPayload = Partial<CreateUserPayload>;
-
 // CREATE
-export const createUser = async (
-  payload: CreateUserPayload
-): Promise<IUser | null> => {
+export const createUser = async (formData: FormData): Promise<IUser | null> => {
   try {
     const res = await fetch("http://localhost:8082/api/users", {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: formData, // already prepared
     });
 
     if (!res.ok) throw new Error(`Failed to create user: ${res.status}`);
@@ -53,7 +50,7 @@ export const getAllUsers = async (): Promise<IUser[] | null> => {
 
 export const getCurrentUser = async (): Promise<IUser[] | null> => {
   try {
-    const res = await fetch("http://localhost:8082/api/users", {
+    const res = await fetch("http://localhost:8082/api/users/me", {
       method: "GET",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -61,6 +58,8 @@ export const getCurrentUser = async (): Promise<IUser[] | null> => {
 
     if (!res.ok) throw new Error(`Failed to fetch users: ${res.status}`);
     const data = await res.json();
+    console.log({ data });
+
     return data.data;
   } catch (err) {
     console.error("Get all users error:", err);

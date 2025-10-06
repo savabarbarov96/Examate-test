@@ -18,7 +18,11 @@ import { Card, CardContent } from "@/components/ui/auth/card";
 import { Input } from "@/components/ui/auth/input";
 import { Label } from "@/components/ui/auth/label";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 import { getAllRoles, Role } from "@/utils/roles/helpers";
 import { createUser } from "@/utils/users/helpers";
@@ -116,17 +120,20 @@ export function CreateUserForm() {
     setSuccess(true);
 
     try {
-      const newUser = await createUser({
-        email,
-        username,
-        role,
-        firstName,
-        lastName,
-        client,
-        phone,
-        dob,
-        profilePic, // file sent here
-      });
+      const formData = new FormData();
+
+      formData.append("email", email);
+      formData.append("username", username);
+      formData.append("role", role);
+      formData.append("firstName", firstName);
+      formData.append("lastName", lastName);
+      formData.append("client", client);
+
+      if (phone) formData.append("phone", phone);
+      if (dob) formData.append("dob", dob.toISOString());
+      if (profilePic) formData.append("profilePic", profilePic);
+      
+      const newUser = await createUser(formData);
 
       if (!newUser) {
         toast.error("Failed to create user.");
@@ -137,7 +144,7 @@ export function CreateUserForm() {
       toast.success("User created successfully!");
       setTimeout(() => navigate("/all-users"), 2000);
     } catch (error) {
-      console.error(error);
+      console.error("Create user error:", error);
       toast.error("Something went wrong creating the user.");
       setSuccess(false);
     }
@@ -165,7 +172,9 @@ export function CreateUserForm() {
                   <div
                     {...getRootProps()}
                     className={`flex flex-col items-center justify-center w-36 h-36 border-2 border-dashed rounded-full cursor-pointer transition hover:border-blue-400 relative overflow-hidden ${
-                      isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
+                      isDragActive
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-300"
                     }`}
                   >
                     <input {...getInputProps()} disabled={success} />
@@ -328,13 +337,11 @@ export function CreateUserForm() {
                     value={phone}
                     onChange={(e) => {
                       const value = e.target.value;
-                      if (/^[0-9]*$/.test(value)) {
-                        setPhone(value);
-                      } else {
+                      if (/^[0-9]*$/.test(value)) setPhone(value);
+                      else
                         toast.error(
                           "Phone number can contain only numeric characters (0-9)."
                         );
-                      }
                     }}
                     className="h-10 text-sm"
                     disabled={success}
