@@ -11,6 +11,7 @@ import ChangePasswordPage from "./components/pages/ChangePassword";
 import CreateUserPage from "./components/pages/CreateUser";
 import AllUserRolesPage from "./components/pages/AllUserRoles";
 import SidebarLayout from "./layouts/SidebarLayout";
+import ProfilePage from "./components/UserProfile";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
               <Route path="/all-users" element={<AllUsersPage />} />
               <Route path="/create-user" element={<CreateUserPage />} />
               <Route path="/all-roles" element={<AllUserRolesPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
             </Route>
           </Route>
 

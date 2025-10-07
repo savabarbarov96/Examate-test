@@ -4,7 +4,10 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
+import { initializeRoles } from "./utils/seedRoles.js";
+
 import userRoutes from "./routes/user.js";
+import roleRoutes from "./routes/role.js";
 
 dotenv.config();
 const app = express();
@@ -16,7 +19,7 @@ app.use(
   cors({
     origin,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -26,7 +29,7 @@ app.options(
   cors({
     origin: origin,
     credentials: true,
-    methods: ["GET", "POST", "OPTIONS"],
+    methods: ["GET", "POST", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -35,8 +38,12 @@ app.use(express.json());
 app.use(cookieParser());
 
 mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
+  .connect(process.env.MONGO_URI as string)
+  .then(async () => {
+    console.log("MongoDB connected");
+
+    await initializeRoles(); 
+  })
   .catch((err) => console.error(err));
 
 app.get("/", (req, res) => {
@@ -44,6 +51,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/users", userRoutes);
+app.use("/api/roles", roleRoutes);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`User Service running on port ${PORT}`));

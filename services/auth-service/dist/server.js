@@ -25,6 +25,10 @@ app.options(/.*/, cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+app.use((err, req, res, next) => {
+    console.error("Unhandled backend error:", err);
+    res.status(500).json({ message: err.message || "Server error" });
+});
 mongoose
     .connect(process.env.MONGO_URI)
     .then(() => console.log("MongoDB connected"))

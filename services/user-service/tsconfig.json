@@ -9,8 +9,9 @@
     "noUnusedParameters": false,
     "outDir": "./dist",
     "typeRoots": ["./node_modules/@types", "./types"],
-    "baseUrl": ".",                  // Optional: For clean path imports
-    "resolveJsonModule": true,        // If you import JSON config files
+    "baseUrl": ".",
+    "strictNullChecks": true,
+    "resolveJsonModule": true,
     "noImplicitAny": false,
   },
   "include": ["**/*.ts", "types/**/*.d.ts"],

@@ -1,140 +1,88 @@
-export async function login(username: string, password: string) {
-  try {
-    const response = await fetch("https://auth-service.examate.net/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({ username, password }),
-    });
+const BASE_URL =
+  import.meta.env.VITE_AUTH_API_URL || "http://localhost:8081/api/auth";
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Login failed");
-    }
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || "Login failed");
-    }
-
-    return data;
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function verify2FA(twoFAIDToken: string, twoFACode: string) {
-  try {
-    const response = await fetch("https://auth-service.examate.net/api/auth/verify-2fa", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${twoFAIDToken}`,
-      },
-      credentials: "include",
-      body: JSON.stringify({ twoFACode }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "2FA failed");
-    }
-
-    const data = await response.json();
-
-    return data;
-  } catch (error) {
-    console.error("Login error:", error);
-    throw error;
-  }
-}
-
-export async function sendResetEmail(
-  email: string
-): Promise<{ message: string }> {
-  const res = await fetch("https://auth-service.examate.net/api/auth/forgotPassword", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-  });
-
+async function handleResponse(res: Response) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.message || "Failed to send reset email");
+    throw new Error(data.message || "Request failed");
   }
 
   return data;
 }
 
-export async function logout(): Promise<void> {
-  const res = await fetch("https://auth-service.examate.net/api/auth/logout", {
+export async function login(username: string, password: string) {
+  const res = await fetch(`${BASE_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ username, password }),
+  });
+
+  return handleResponse(res);
+}
+
+export async function verify2FA(twoFAIDToken: string, twoFACode: string) {
+  const res = await fetch(`${BASE_URL}/verify-2fa`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${twoFAIDToken}`,
+    },
+    credentials: "include",
+    body: JSON.stringify({ twoFACode }),
+  });
+
+  return handleResponse(res);
+}
+
+export async function sendResetEmail(email: string) {
+  const res = await fetch(`${BASE_URL}/forgotPassword`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email }),
+  });
+
+  return handleResponse(res);
+}
+
+export async function logout() {
+  const res = await fetch(`${BASE_URL}/logout`, {
     method: "POST",
     credentials: "include",
   });
 
-  if (!res.ok) {
-    const data = await res.json();
-    throw new Error(data.message || "Logout failed");
-  }
+  return handleResponse(res);
 }
 
-export const verifyCode = async (email: string, code: string) => {
-  const res = await fetch(`https://auth-service.examate.net/api/auth/verify-code`, {
+export async function verifyCode(email: string, code: string) {
+  const res = await fetch(`${BASE_URL}/verify-code`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ email, code }),
   });
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Failed to send reset verification code");
-  }
-
-  return data;
+  return handleResponse(res);
 }
 
-export async function changePassword(
-  email: string,
-  newPassword: string
-): Promise<any> {
-  const res = await fetch("https://auth-service.examate.net/api/auth/change-password", {
+export async function changePassword(email: string, newPassword: string) {
+  const res = await fetch(`${BASE_URL}/change-password`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify({ email, newPassword }),
   });
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Failed to send reset email");
-  }
-
-  return data;
+  return handleResponse(res);
 }
 
 export const fetchActiveSessions = async () => {
-  try {
-    const res = await fetch(
-      `${
-        import.meta.env.VITE_API_URL || "http://localhost:8081"
-      }/api/session/count`,
-      { credentials: "include" }
-    );
+  const url =
+    import.meta.env.VITE_API_URL || "http://localhost:8081/api/session/count";
 
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
+  const res = await fetch(url, { credentials: "include" });
 
-    const data = await res.json();
-    console.log({ data });
-
-    return data;
-  } catch (err) {
-    console.error("Failed to fetch active sessions:", err);
-  }
+  return handleResponse(res);
 };

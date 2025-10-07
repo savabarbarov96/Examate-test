@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Home, Users, UserPlus, List, Shield, ShieldPlus } from "lucide-react";
 import { useState } from "react";
+import TopNavProfile from "@/components/TopNavProfile";
 
 export default function SidebarLayout() {
   const [usersOpen, setUsersOpen] = useState(false);
@@ -92,17 +93,6 @@ export default function SidebarLayout() {
                     <span>All Roles</span>
                   </NavLink>
 
-                  <NavLink
-                    to="/dashboard"
-                    className={({ isActive }) =>
-                      `flex items-center gap-2 px-2 py-1 rounded-md transition-colors ${
-                        isActive ? "bg-muted text-primary font-semibold" : "hover:bg-muted"
-                      }`
-                    }
-                  >
-                    <ShieldPlus size={16} />
-                    <span>Create Role</span>
-                  </NavLink>
                 </div>
               )}
             </SidebarMenuItem>
@@ -119,9 +109,10 @@ export default function SidebarLayout() {
       {/* Main content area */}
       <SidebarInset>
         {/* Top bar with trigger */}
-        <div className="flex items-center p-2 border-b">
+        <div className="flex items-center justify-between p-2 border-b">
           <SidebarTrigger />
-          <h1 className="ml-2 font-semibold">Dashboard</h1>
+          {/* <h1 className="ml-2 font-semibold">Dashboard</h1> */}
+              <TopNavProfile />
         </div>
 
         {/* Page content */}
