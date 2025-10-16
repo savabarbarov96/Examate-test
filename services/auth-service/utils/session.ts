@@ -1,7 +1,7 @@
 import Redis from "ioredis";
 import { v4 as uuidv4 } from "uuid";
 
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+const redis = new Redis(process.env.REDIS_URL || "redis://default:NtrpfnDC6bQUJCQxlK2sj0vFVMCMZiDxu09xSouhsAOktGZ2BbW4YFNbrjuAJnMx@s0owg0cwso080gg80ckgcow4:6379/0");
 
 redis.on("error", (err) => {
   console.error("Redis connection error:", err);
@@ -34,7 +34,7 @@ export async function countActiveSessions() {
 
 // real-time session updates via Socket.IO
 export function watchSessions(io) {
-  const subscriber = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+  const subscriber = new Redis(process.env.REDIS_URL || "redis://default:NtrpfnDC6bQUJCQxlK2sj0vFVMCMZiDxu09xSouhsAOktGZ2BbW4YFNbrjuAJnMx@s0owg0cwso080gg80ckgcow4:6379/0");
 
   subscriber.subscribe("sessions", (err, count) => {
     if (err) console.error("Failed to subscribe to Redis sessions channel:", err);
