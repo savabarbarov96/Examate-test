@@ -10,7 +10,7 @@ import authRoutes from "./routes/user.js";
 import sessionRoutes from "./routes/session.js";
 dotenv.config();
 const app = express();
-const origin = process.env.CLIENT_ORIGIN?.replace(/^"|"$/g, '') || "http://localhost:8080";
+const origin = process.env.CLIENT_ORIGIN?.replace(/^"|"$/g, '') || "https://auth-service.examate.net";
 app.use(cors({
     origin: origin,
     credentials: true,
