@@ -80,7 +80,7 @@ export async function changePassword(email: string, newPassword: string) {
 
 export const fetchActiveSessions = async () => {
   const url =
-    import.meta.env.VITE_API_URL || "http://localhost:8081/api/session/count";
+    import.meta.env.VITE_AUTH_API_URL || "http://localhost:8081/api/session/count";
 
   const res = await fetch(url, { credentials: "include" });
 
