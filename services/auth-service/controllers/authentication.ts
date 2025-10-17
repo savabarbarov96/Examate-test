@@ -49,6 +49,9 @@ const createAndSendTokens = (user: HydratedDocument<IUser>, res: Response) => {
     }
   );
 
+  console.log({secure: isProduction,
+    sameSite: isProduction ? "none" : "lax"});
+  
   res.cookie("jwt", accessToken, {
     httpOnly: true,
     secure: isProduction,
