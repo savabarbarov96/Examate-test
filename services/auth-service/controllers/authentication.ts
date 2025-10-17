@@ -38,6 +38,10 @@ export const promisifyJWTVerification = (
 
 const createAndSendTokens = (user: HydratedDocument<IUser>, res: Response) => {
   const accessToken = signToken(user._id.toString());
+
+  const isProd = process.env.NODE_ENV === "production";
+  console.log({ isProd });
+  
   const refreshToken = jwt.sign(
     { id: user._id },
     process.env.JWT_REFRESH_SECRET!,
