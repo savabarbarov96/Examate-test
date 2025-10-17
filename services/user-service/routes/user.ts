@@ -20,14 +20,14 @@ const router = express.Router();
 // READ
 router.get(
   "/",
-  protect,
+  // protect,
   // checkPermission("users", "view"),
   getAllUsers
 );
 router.get("/me", protect, getCurrentUser);
 router.get(
   "/:id",
-  protect,
+  // protect,
   // checkPermission("users", "view"),
   getUserById
 );
@@ -35,7 +35,7 @@ router.get(
 // CREATE
 router.post(
   "/",
-  protect,
+  // protect,
   // checkPermission("users", "create"),
   upload.single("profilePic"),
   createUser
@@ -44,7 +44,7 @@ router.post(
 // UPDATE
 router.put(
   "/:id",
-  protect,
+  // protect,
   // checkPermission("users", "edit"),
   updateUser
 );
@@ -53,7 +53,7 @@ router.put(
 router.delete(
   "/:id",
   // protect,
-  checkPermission("users", "edit"),
+  // checkPermission("users", "edit"),
   deleteUser
 );
 

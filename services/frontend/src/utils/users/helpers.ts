@@ -22,7 +22,7 @@ export const createUser = async (formData: FormData): Promise<IUser | null> => {
     const res = await fetch(`${BASE_URL}/api/users`, {
       method: "POST",
       credentials: "include",
-      body: formData, // already prepared
+      body: formData,
     });
 
     if (!res.ok) throw new Error(`Failed to create user: ${res.status}`);
