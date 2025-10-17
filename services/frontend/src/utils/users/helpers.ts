@@ -1,5 +1,9 @@
 import { IUser } from "../../../../user-service/models/User";
 
+const BASE_URL =
+  import.meta.env.VITE_USER_API_URL || "http://localhost:8081/api/auth";
+
+
 export type CreateUserPayload = {
   email: string;
   username: string;
@@ -9,13 +13,13 @@ export type CreateUserPayload = {
   client: string;
   phone?: string;
   dob?: string;
-  profilePic?: File; // <-- now it's a File instead of string
+  profilePic?: File;
 };
 
 // CREATE
 export const createUser = async (formData: FormData): Promise<IUser | null> => {
   try {
-    const res = await fetch("https://user-service.examate.net/api/users", {
+    const res = await fetch(`${BASE_URL}/api/users`, {
       method: "POST",
       credentials: "include",
       body: formData, // already prepared
@@ -33,7 +37,7 @@ export const createUser = async (formData: FormData): Promise<IUser | null> => {
 // READ
 export const getAllUsers = async (): Promise<IUser[] | null> => {
   try {
-    const res = await fetch("https://user-service.examate.net/api/users", {
+    const res = await fetch(`${BASE_URL}/api/users`, {
       method: "GET",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -50,7 +54,7 @@ export const getAllUsers = async (): Promise<IUser[] | null> => {
 
 export const getCurrentUser = async (): Promise<IUser[] | null> => {
   try {
-    const res = await fetch("https://user-service.examate.net/api/users/me", {
+    const res = await fetch(`${BASE_URL}/api/users/me`, {
       method: "GET",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -73,7 +77,7 @@ export const updateUser = async (
   payload: UpdateUserPayload
 ): Promise<IUser | null> => {
   try {
-    const res = await fetch(`https://user-service.examate.net/api/users/${id}`, {
+    const res = await fetch(`${BASE_URL}/api/users/${id}`, {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -92,7 +96,7 @@ export const updateUser = async (
 // DELETE
 export const deleteUser = async (id: string): Promise<boolean> => {
   try {
-    const res = await fetch(`https://user-service.examate.net/api/users/${id}`, {
+    const res = await fetch(`${BASE_URL}/api/users/${id}`, {
       method: "DELETE",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
