@@ -49,14 +49,12 @@ const createAndSendTokens = (user: HydratedDocument<IUser>, res: Response) => {
     }
   );
 
-  console.log({secure: isProduction,
-    sameSite: isProduction ? "none" : "lax"});
-  
   res.cookie("jwt", accessToken, {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
     maxAge: 15 * 60 * 1000,
+    domain: ".examate.net",
   });
 
   res.cookie("refreshToken", refreshToken, {
@@ -64,6 +62,7 @@ const createAndSendTokens = (user: HydratedDocument<IUser>, res: Response) => {
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
     maxAge: 8 * 24 * 60 * 60 * 1000,
+    domain: ".examate.net",
   });
 
   user.password = undefined!;
@@ -259,6 +258,7 @@ export const login = async (
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
+        domain: ".examate.net",
       });
       
       createAndSendTokens(user, res);
@@ -480,6 +480,7 @@ export const verify2fa = async (
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
+      domain: ".examate.net",
     });
 
     createAndSendTokens(user, res);
@@ -624,6 +625,7 @@ export const refreshAccessToken = async (
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
       maxAge: 15 * 60 * 1000,
+      domain: ".examate.net",
     });
 
     res.status(200).json({ message: "Token refreshed" });
@@ -644,12 +646,14 @@ export const logout = async (req: Request, res: Response) => {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
+    domain: ".examate.net",
   });
 
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
+    domain: ".examate.net",
   });
 
   res.status(200).json({ message: "Logged out successfully" });
