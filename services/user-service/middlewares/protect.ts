@@ -11,8 +11,6 @@ export const protect = async (
   try {
     const token = req.cookies.jwt;
 
-    console.log({ token });
-    
     if (!token) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -20,8 +18,6 @@ export const protect = async (
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
 
     const user = await User.findById(decoded.id);
-    
-    console.log({ user });
     
     if (!user) {
       return res.status(401).json({ message: "User not found" });

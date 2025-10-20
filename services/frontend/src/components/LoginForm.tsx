@@ -147,33 +147,44 @@ export function LoginForm({
       <Card className="overflow-hidden">
         <CardContent className="grid p-0 md:grid-cols-2">
           {show2FA ? (
-            <form onSubmit={handle2FAVerify} className="space-y-4 p-6 md:p-8">
-              <h2 className="text-xl font-semibold text-center">
-                Enter 2FA Code
-              </h2>
+            <form
+  onSubmit={handle2FAVerify}
+  className="flex flex-col items-center justify-center text-center p-6 md:p-8 space-y-6 min-h-[400px]"
+>
+  <div>
+    <h2 className="text-2xl font-semibold mb-2">Enter 2FA Code</h2>
+    <p className="text-sm text-muted-foreground max-w-[190px] mx-auto text-center">
+  Please check your email for the verification code
+</p>
 
-              {isLoginInvalid ? (
-                <Alert variant="destructive">
-                  <AlertCircleIcon />
-                  <AlertTitle>{loginFailMessage}</AlertTitle>
-                </Alert>
-              ) : null}
+  </div>
 
-              <InputOTPPattern
-                value={twoFACode}
-                onChange={(val) => setTwoFACode(val)}
-              />
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={
-                  isVerifying ||
-                  (hasAttemptedVerification && resendCooldown > 0)
-                }
-              >
-                {get2FAButtonLabel()}
-              </Button>
-            </form>
+  {isLoginInvalid && (
+    <Alert variant="destructive" className="w-full max-w-sm text-left">
+      <AlertCircleIcon />
+      <AlertTitle>{loginFailMessage}</AlertTitle>
+    </Alert>
+  )}
+
+  <div className="flex justify-center w-full">
+    <InputOTPPattern
+      value={twoFACode}
+      onChange={(val) => setTwoFACode(val)}
+    />
+  </div>
+
+  <Button
+    type="submit"
+    className="w-full max-w-sm"
+    disabled={
+      isVerifying ||
+      (hasAttemptedVerification && resendCooldown > 0)
+    }
+  >
+    {get2FAButtonLabel()}
+  </Button>
+</form>
+
           ) : (
             <form className="p-6 md:p-8" onSubmit={handleLogin}>
               <div className="flex flex-col gap-6">
@@ -187,10 +198,12 @@ export function LoginForm({
                 {isLoginInvalid && (
                   <Alert variant="destructive">
                     <AlertCircleIcon />
-                    <AlertTitle>{loginFailMessage}</AlertTitle>
+                    <AlertTitle>
+                      {loginFailMessage}
+                    </AlertTitle>
                     <button
                       type="button"
-                      className="absolute top-1.5 right-3 text-xl text-red-600 hover:text-red-800 transition-colors cursor-pointer"
+                      className="absolute -top-1 right-1 text-xl text-red-600 hover:text-red-800 transition-colors cursor-pointer"
                       onClick={closeAlert}
                       aria-label="Close alert"
                     >
