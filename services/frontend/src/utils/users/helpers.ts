@@ -9,7 +9,7 @@ export type CreateUserPayload = {
   client: string;
   phone?: string;
   dob?: string;
-  profilePic?: File; // <-- now it's a File instead of string
+  profilePic?: File;
 };
 
 // CREATE
@@ -18,7 +18,7 @@ export const createUser = async (formData: FormData): Promise<IUser | null> => {
     const res = await fetch("http://localhost:8082/api/users", {
       method: "POST",
       credentials: "include",
-      body: formData, // already prepared
+      body: formData,
     });
 
     if (!res.ok) throw new Error(`Failed to create user: ${res.status}`);

@@ -187,10 +187,12 @@ export function LoginForm({
                 {isLoginInvalid && (
                   <Alert variant="destructive">
                     <AlertCircleIcon />
-                    <AlertTitle>{loginFailMessage}</AlertTitle>
+                    <AlertTitle>
+                      {loginFailMessage}
+                    </AlertTitle>
                     <button
                       type="button"
-                      className="absolute top-1.5 right-3 text-xl text-red-600 hover:text-red-800 transition-colors cursor-pointer"
+                      className="absolute -top-1 right-1 text-xl text-red-600 hover:text-red-800 transition-colors cursor-pointer"
                       onClick={closeAlert}
                       aria-label="Close alert"
                     >

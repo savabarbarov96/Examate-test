@@ -12,7 +12,7 @@ export const getAllUsers = async (
 ) => {
   try {
     const users = await User.find()
-      .select("first_name last_name email status createdAt username ") // Add role
+      .select("first_name last_name firstName lastName email status createdAt username ") // Add role
       // .populate("role", "name permissions")
       .lean();
 

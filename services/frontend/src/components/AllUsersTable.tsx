@@ -12,7 +12,13 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Trash2, Edit2, MoreHorizontal, AlertCircle } from "lucide-react";
+import {
+  ArrowUpDown,
+  Trash2,
+  Edit2,
+  MoreHorizontal,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/auth/input";
@@ -47,15 +53,19 @@ import { getAllUsers, deleteUser } from "@/utils/users/helpers";
 
 export type User = {
   _id: string;
-  first_name?: string;
-  last_name?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   username?: string;
   role?: string;
   client?: string;
 };
 
-export default function AllUsers({ loggedInUserRole }: { loggedInUserRole: string }) {
+export default function AllUsers({
+  loggedInUserRole,
+}: {
+  loggedInUserRole: string;
+}) {
   const [data, setData] = useState<User[]>([]);
   const [showAlert, setShowAlert] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -71,9 +81,11 @@ export default function AllUsers({ loggedInUserRole }: { loggedInUserRole: strin
       try {
         const res = await getAllUsers();
         if (res) {
-          const filtered = loggedInUserRole === "Client Admin"
-            ? res.filter((u: User) => u.role !== "Sys Admin")
-            : res;
+          const filtered =
+            loggedInUserRole === "Client Admin"
+              ? res.filter((u: User) => u.role !== "Sys Admin")
+              : res;
+
           setData(filtered);
         }
       } catch (err) {
@@ -136,19 +148,45 @@ export default function AllUsers({ loggedInUserRole }: { loggedInUserRole: strin
       enableSorting: false,
       enableHiding: false,
     },
-    { accessorKey: "first_name", header: "First Name", cell: ({ row }) => row.getValue("first_name") || "N/A" },
-    { accessorKey: "last_name", header: "Last Name", cell: ({ row }) => row.getValue("last_name") || "N/A" },
-    { accessorKey: "email", header: "Email", cell: ({ row }) => row.getValue("email") || "N/A" },
-    { accessorKey: "username", header: "Username", cell: ({ row }) => row.getValue("username") || "N/A" },
-    { accessorKey: "role", header: "Role", cell: ({ row }) => row.getValue("role") || "N/A" },
-    { accessorKey: "client", header: "Client", cell: ({ row }) => row.getValue("client") || "N/A" },
+    {
+      accessorKey: "firstName",
+      header: "First Name",
+      cell: ({ row }) => row.getValue("firstName") || "N/A",
+    },
+    {
+      accessorKey: "lastName",
+      header: "Last Name",
+      cell: ({ row }) => row.getValue("lastName") || "N/A",
+    },
+    {
+      accessorKey: "email",
+      header: "Email",
+      cell: ({ row }) => row.getValue("email") || "N/A",
+    },
+    {
+      accessorKey: "username",
+      header: "Username",
+      cell: ({ row }) => row.getValue("username") || "N/A",
+    },
+    {
+      accessorKey: "role",
+      header: "Role",
+      cell: ({ row }) => row.getValue("role") || "N/A",
+    },
+    {
+      accessorKey: "client",
+      header: "Client",
+      cell: ({ row }) => row.getValue("client") || "N/A",
+    },
+
     {
       id: "actions",
       enableHiding: false,
       header: () => <span>Actions</span>,
       cell: ({ row }) => {
         const user = row.original;
-        const canManage = loggedInUserRole === "Sys Admin" || user.role !== "Sys Admin";
+        const canManage =
+          loggedInUserRole === "Sys Admin" || user.role !== "Sys Admin";
         const isActive = activeRowId === row.id;
 
         if (!canManage) return null;
@@ -156,7 +194,10 @@ export default function AllUsers({ loggedInUserRole }: { loggedInUserRole: strin
         return (
           <div className="relative actions-cell">
             {isActive ? (
-              <div className="flex gap-2 justify-center" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="flex gap-2 justify-center"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -176,7 +217,7 @@ export default function AllUsers({ loggedInUserRole }: { loggedInUserRole: strin
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => console.log("Edit user:", user._id)}
+                        onClick={() => navigate(`/users/${user._id}/edit`)}
                       >
                         <Edit2 className="w-4 h-4" />
                       </Button>
@@ -223,7 +264,9 @@ export default function AllUsers({ loggedInUserRole }: { loggedInUserRole: strin
         <Alert variant="destructive">
           <AlertCircle />
           <AlertTitle>Cannot hide last column</AlertTitle>
-          <AlertDescription>At least one column must remain visible.</AlertDescription>
+          <AlertDescription>
+            At least one column must remain visible.
+          </AlertDescription>
         </Alert>
       )}
 
@@ -231,7 +274,9 @@ export default function AllUsers({ loggedInUserRole }: { loggedInUserRole: strin
         <Input
           placeholder="Filter by email..."
           value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-          onChange={(e) => table.getColumn("email")?.setFilterValue(e.target.value)}
+          onChange={(e) =>
+            table.getColumn("email")?.setFilterValue(e.target.value)
+          }
           className="max-w-sm"
         />
       </div>
@@ -245,7 +290,10 @@ export default function AllUsers({ loggedInUserRole }: { loggedInUserRole: strin
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -254,17 +302,26 @@ export default function AllUsers({ loggedInUserRole }: { loggedInUserRole: strin
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -274,18 +331,23 @@ export default function AllUsers({ loggedInUserRole }: { loggedInUserRole: strin
       </div>
 
       {userToDelete && (
-        <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+        <AlertDialog
+          open={!!userToDelete}
+          onOpenChange={() => setUserToDelete(null)}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Delete User</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete the user "{userToDelete.username}"?
-                This action cannot be undone.
+                Are you sure you want to delete the user "
+                {userToDelete.username}"? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDeleteUser}>Delete</AlertDialogAction>
+              <AlertDialogAction onClick={confirmDeleteUser}>
+                Delete
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -293,13 +355,24 @@ export default function AllUsers({ loggedInUserRole }: { loggedInUserRole: strin
 
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="text-muted-foreground flex-1 text-sm">
-          {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
         <div className="space-x-2">
-          <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
             Previous
           </Button>
-          <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
             Next
           </Button>
         </div>
