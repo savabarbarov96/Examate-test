@@ -3,6 +3,8 @@ import User from "../models/User.js";
 
 export const getMe = async (req, res) => {
   try {
+    console.log("Checking current user");
+    
     if (!req.user || !req.user._id) {
       console.log("Not authenticated");
       return res.status(401).json({ message: "Not authenticated" });

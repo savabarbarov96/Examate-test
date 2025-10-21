@@ -1,19 +1,10 @@
 import { IUser } from "../../../../user-service/models/User";
-
-export type CreateUserPayload = {
-  email: string;
-  username: string;
-  role: string;
-  firstName: string;
-  lastName: string;
-  client: string;
-  phone?: string;
-  dob?: string;
-  profilePic?: File;
-};
+import { CreateUserPayload, GetUserPayload, UpdateUserPayload } from "./types";
 
 // CREATE
-export const createUser = async (formData: FormData): Promise<IUser | null> => {
+export const createUser = async (
+  formData: FormData
+): Promise<CreateUserPayload | null> => {
   try {
     const res = await fetch("http://localhost:8082/api/users", {
       method: "POST",
@@ -31,7 +22,7 @@ export const createUser = async (formData: FormData): Promise<IUser | null> => {
 };
 
 // READ
-export const getAllUsers = async (): Promise<IUser[] | null> => {
+export const getAllUsers = async (): Promise<GetUserPayload[] | null> => {
   try {
     const res = await fetch("http://localhost:8082/api/users", {
       method: "GET",
@@ -48,7 +39,7 @@ export const getAllUsers = async (): Promise<IUser[] | null> => {
   }
 };
 
-export const getCurrentUser = async (): Promise<IUser[] | null> => {
+export const getCurrentUser = async (): Promise<GetUserPayload | null> => {
   try {
     const res = await fetch("http://localhost:8082/api/users/me", {
       method: "GET",
@@ -58,7 +49,26 @@ export const getCurrentUser = async (): Promise<IUser[] | null> => {
 
     if (!res.ok) throw new Error(`Failed to fetch users: ${res.status}`);
     const data = await res.json();
-    console.log({ data });
+
+    return data.data;
+  } catch (err) {
+    console.error("Get all users error:", err);
+    return null;
+  }
+};
+
+export const getUserById = async (
+  id: string
+): Promise<GetUserPayload | null> => {
+  try {
+    const res = await fetch(`http://localhost:8082/api/users/${id}`, {
+      method: "GET",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!res.ok) throw new Error(`Failed to fetch users: ${res.status}`);
+    const data = await res.json();
 
     return data.data;
   } catch (err) {
@@ -70,18 +80,19 @@ export const getCurrentUser = async (): Promise<IUser[] | null> => {
 // UPDATE
 export const updateUser = async (
   id: string,
-  payload: UpdateUserPayload
+  formData: FormData
 ): Promise<IUser | null> => {
   try {
     const res = await fetch(`http://localhost:8082/api/users/${id}`, {
       method: "PUT",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: formData,
     });
 
     if (!res.ok) throw new Error(`Failed to update user: ${res.status}`);
+
     const data = await res.json();
+
     return data.data;
   } catch (err) {
     console.error("Update user error:", err);

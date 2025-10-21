@@ -46,6 +46,7 @@ router.put(
   "/:id",
   protect,
   // checkPermission("users", "edit"),
+  upload.single("profilePic"),
   updateUser
 );
 

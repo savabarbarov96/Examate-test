@@ -366,6 +366,7 @@ export function CreateUserForm() {
                       <Calendar
                         mode="single"
                         selected={dob}
+                        captionLayout="dropdown"
                         onSelect={setDob}
                         disabled={(date) => date > today || date < minDate}
                         autoFocus
