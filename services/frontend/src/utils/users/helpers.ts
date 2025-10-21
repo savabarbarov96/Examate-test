@@ -1,12 +1,15 @@
 import { IUser } from "../../../../user-service/models/User";
 import { CreateUserPayload, GetUserPayload, UpdateUserPayload } from "./types";
 
+const BASE_URL =
+  import.meta.env.VITE_USER_API_URL || "http://localhost:8082/api/auth";
+
 // CREATE
 export const createUser = async (
   formData: FormData
 ): Promise<CreateUserPayload | null> => {
   try {
-    const res = await fetch("http://localhost:8082/api/users", {
+    const res = await fetch(`${BASE_URL}/api/users`, {
       method: "POST",
       credentials: "include",
       body: formData,
@@ -24,7 +27,7 @@ export const createUser = async (
 // READ
 export const getAllUsers = async (): Promise<GetUserPayload[] | null> => {
   try {
-    const res = await fetch("http://localhost:8082/api/users", {
+    const res = await fetch(`${BASE_URL}/api/users`, {
       method: "GET",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -41,7 +44,7 @@ export const getAllUsers = async (): Promise<GetUserPayload[] | null> => {
 
 export const getCurrentUser = async (): Promise<GetUserPayload | null> => {
   try {
-    const res = await fetch("http://localhost:8082/api/users/me", {
+    const res = await fetch(`${BASE_URL}/api/users/me`, {
       method: "GET",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -61,7 +64,7 @@ export const getUserById = async (
   id: string
 ): Promise<GetUserPayload | null> => {
   try {
-    const res = await fetch(`http://localhost:8082/api/users/${id}`, {
+    const res = await fetch(`${BASE_URL}/api/users/${id}`, {
       method: "GET",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -83,7 +86,7 @@ export const updateUser = async (
   formData: FormData
 ): Promise<IUser | null> => {
   try {
-    const res = await fetch(`http://localhost:8082/api/users/${id}`, {
+    const res = await fetch(`${BASE_URL}/api/users/${id}`, {
       method: "PUT",
       credentials: "include",
       body: formData,
@@ -103,7 +106,7 @@ export const updateUser = async (
 // DELETE
 export const deleteUser = async (id: string): Promise<boolean> => {
   try {
-    const res = await fetch(`http://localhost:8082/api/users/${id}`, {
+    const res = await fetch(`${BASE_URL}/api/users/${id}`, {
       method: "DELETE",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
