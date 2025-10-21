@@ -48,8 +48,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 
-import { getAllUsers, deleteUser } from "@/utils/users/helpers";
+import { getAllUsers, deleteUser, getCurrentUser } from "@/utils/users/helpers";
 
 export type User = {
   _id: string;
@@ -61,11 +62,7 @@ export type User = {
   client?: string;
 };
 
-export default function AllUsers({
-  loggedInUserRole,
-}: {
-  loggedInUserRole: string;
-}) {
+export default function AllUsers() {
   const [data, setData] = useState<User[]>([]);
   const [showAlert, setShowAlert] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -75,25 +72,30 @@ export default function AllUsers({
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
+  const navigate = useNavigate();
+  
   // fetch users from backend
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const res = await getAllUsers();
-        if (res) {
-          const filtered =
-            loggedInUserRole === "Client Admin"
-              ? res.filter((u: User) => u.role !== "Sys Admin")
-              : res;
+        const currUser = await getCurrentUser();
 
-          setData(filtered);
+        if (res) {
+          // Fix tomorrow!
+          // const filtered =
+          //   currUser?.role.name === "Sys Admin"
+          //     ? res.filter((u: User) => u.role !== "Sys Admin")
+          //     : res;
+
+          setData(res as any);
         }
       } catch (err) {
         console.error("Failed to fetch users:", err);
       }
     };
     fetchUsers();
-  }, [loggedInUserRole]);
+  }, []);
 
   // close actions menu on outside click
   useEffect(() => {
@@ -185,11 +187,11 @@ export default function AllUsers({
       header: () => <span>Actions</span>,
       cell: ({ row }) => {
         const user = row.original;
-        const canManage =
-          loggedInUserRole === "Sys Admin" || user.role !== "Sys Admin";
+        // const canManage =
+        //   loggedInUserRole === "Sys Admin" || user.role !== "Sys Admin";
         const isActive = activeRowId === row.id;
 
-        if (!canManage) return null;
+        // if (!canManage) return null;
 
         return (
           <div className="relative actions-cell">

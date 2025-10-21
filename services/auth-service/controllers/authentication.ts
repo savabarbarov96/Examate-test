@@ -123,7 +123,7 @@ export const login = async (
         status: "failed",
         message: "Invalid username",
       });
-      return res.status(401).json({ message: "Invalid username" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const now = new Date();

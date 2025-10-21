@@ -12,8 +12,13 @@ export const getAllUsers = async (
 ) => {
   try {
     const users = await User.find()
-      .select("first_name last_name firstName lastName email status createdAt username ") // Add role
-      // .populate("role", "name permissions")
+      .select(
+        "firstName lastName email status createdAt username"
+      )
+      // .populate(
+      //   "role"
+      //   // , "name permissions"
+      // )
       .lean();
 
     res.status(200).json({
@@ -34,8 +39,11 @@ export const getUserById = async (
 ) => {
   try {
     const user = await User.findById(req.params.id)
-      .select("first_name last_name email status createdAt username role")
-      .populate("role", "name permissions");
+      .select("firstName lastName email username role phone dob profilePic")
+      .populate(
+        "role"
+        // "name permissions"
+      );
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -55,8 +63,8 @@ export const getCurrentUser = async (req, res, next) => {
     }
 
     const user = await User.findById(userId)
-      .select("first_name last_name email username role phone dob profilePic")
-      .populate("role", "name");
+      .select("firstName lastName email username role phone dob profilePic")
+      .populate("role");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -71,11 +79,12 @@ export const getCurrentUser = async (req, res, next) => {
 // CREATE user (requires "create" permission)
 export const createUser = async (req, res, next) => {
   try {
-    const { email, username, role, firstName, lastName, client, phone, dob } = req.body;
+    const { email, username, role, firstName, lastName, client, phone, dob } =
+      req.body;
     const profilePicFile = req.file;
 
     let profilePicBase64 = "";
-    
+
     if (profilePicFile) {
       const mimeType = profilePicFile.mimetype;
       const buffer = profilePicFile.buffer;
@@ -113,7 +122,6 @@ export const createUser = async (req, res, next) => {
   }
 };
 
-
 // UPDATE user (requires "update" permission)
 export const updateUser = async (
   req: Request,
@@ -123,8 +131,33 @@ export const updateUser = async (
   try {
     const { id } = req.params;
     const updates = req.body;
+    const profilePicFile = req.file;
 
-    const user = await User.findByIdAndUpdate(id, updates, { new: true });
+    // console.log({ id, updates, profilePicFile });
+
+    let profilePicBase64: string | undefined;
+
+    if (profilePicFile) {
+      const mimeType = profilePicFile.mimetype;
+      const buffer = profilePicFile.buffer;
+
+      if (!["image/png", "image/jpeg"].includes(mimeType)) {
+        return res
+          .status(400)
+          .json({ message: "Invalid profile picture format" });
+      }
+
+      if (buffer.length > 2 * 1024 * 1024) {
+        return res.status(400).json({ message: "Profile picture too large" });
+      }
+
+      profilePicBase64 = `data:${mimeType};base64,${buffer.toString("base64")}`;
+      updates.profilePic = profilePicBase64;
+    }
+
+    const user = await User.findByIdAndUpdate(id, updates, {
+      new: true,
+    });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     res.status(200).json({ status: "success", data: user });
