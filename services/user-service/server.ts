@@ -13,7 +13,7 @@ dotenv.config();
 const app = express();
 
 const origin =
-  process.env.CLIENT_ORIGIN?.replace(/^"|"$/g, "") || "http://localhost:8080";
+  process.env.CLIENT_ORIGIN?.replace(/^"|"$/g, "") || "https://dev.examate.net";
 
 app.use(
   cors({

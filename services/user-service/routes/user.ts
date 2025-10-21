@@ -53,8 +53,8 @@ router.put(
 // DELETE
 router.delete(
   "/:id",
-  // protect,
-  checkPermission("users", "edit"),
+  protect,
+  // checkPermission("users", "edit"),
   deleteUser
 );
 

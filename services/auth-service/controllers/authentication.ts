@@ -11,6 +11,8 @@ import { createSession, terminateSession } from "../utils/session.js";
 import { geoReader } from "../utils/geo.js";
 import { recordLoginAttempt } from "../utils/logger.js";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const signToken = (id: string) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "15m",
@@ -38,6 +40,7 @@ export const promisifyJWTVerification = (
 
 const createAndSendTokens = (user: HydratedDocument<IUser>, res: Response) => {
   const accessToken = signToken(user._id.toString());
+
   const refreshToken = jwt.sign(
     { id: user._id },
     process.env.JWT_REFRESH_SECRET!,
@@ -48,16 +51,18 @@ const createAndSendTokens = (user: HydratedDocument<IUser>, res: Response) => {
 
   res.cookie("jwt", accessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     maxAge: 15 * 60 * 1000,
+    domain: ".examate.net",
   });
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     maxAge: 8 * 24 * 60 * 60 * 1000,
+    domain: ".examate.net",
   });
 
   user.password = undefined!;
@@ -251,8 +256,9 @@ export const login = async (
       const session = await createSession(user._id.toString());
       res.cookie("sessionId", session.sessionId, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        domain: ".examate.net",
       });
       
       createAndSendTokens(user, res);
@@ -472,8 +478,9 @@ export const verify2fa = async (
 
     res.cookie("sessionId", session.sessionId, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      domain: ".examate.net",
     });
 
     createAndSendTokens(user, res);
@@ -615,9 +622,10 @@ export const refreshAccessToken = async (
 
     res.cookie("jwt", newAccessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 15 * 60 * 1000,
+      domain: ".examate.net",
     });
 
     res.status(200).json({ message: "Token refreshed" });
@@ -636,14 +644,16 @@ export const logout = async (req: Request, res: Response) => {
 
   res.clearCookie("jwt", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    domain: ".examate.net",
   });
 
   res.clearCookie("refreshToken", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    domain: ".examate.net",
   });
 
   res.status(200).json({ message: "Logged out successfully" });
