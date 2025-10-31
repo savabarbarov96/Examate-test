@@ -54,7 +54,7 @@ router.put(
 router.delete(
   "/:id",
   // protect,
-  checkPermission("users", "edit"),
+  // checkPermission("users", "edit"),
   deleteUser
 );
 

@@ -11,11 +11,17 @@ export interface IUser extends IUserMethods {
   lastName: string;
   email: string;
   username: string;
+  client: string;
+  dob?: Date;
+  profilePic?: string;
   status: string;
   accountLocked: boolean;
   password: string;
+  phone?: string;
   passwordConfirm?: string;
   passwordChangedAt?: Date;
+  verificationToken?: string;
+  verificationExpires?: Date;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   twoFactorEnabled: boolean;
@@ -49,6 +55,10 @@ const userSchema = new mongoose.Schema<IUser>(
         message: "Username contains invalid characters.",
       },
     },
+    client: { type: String, trim: true },
+    phone: { type: String, trim: true },
+    dob: { type: Date },
+    profilePic: { type: String },
     status: { type: String, default: "unverified" },
     accountLocked: { type: Boolean, default: false },
     password: { type: String, required: true, minlength: 8, select: false },
@@ -68,6 +78,8 @@ const userSchema = new mongoose.Schema<IUser>(
     twoFactorEnabled: { type: Boolean, default: false },
     failedLoginAttempts: { type: Number, default: 0 },
     lastFailedLoginAttempt: Date,
+    verificationToken: String,
+    verificationExpires: Date,
     isLocked: { type: Boolean, default: false },
     verificationCode: { type: String, select: false },
     verificationCodeExpires: Date,
@@ -80,18 +92,12 @@ const userSchema = new mongoose.Schema<IUser>(
 );
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-
+  if (!this.isModified("password") || this.isNew) return next();
   this.password = await bcrypt.hash(this.password, 12);
   this.passwordConfirm = undefined;
-
-  if (!this.isNew) {
-    this.passwordChangedAt = new Date(Date.now() - 1000);
-  }
-
+  this.passwordChangedAt = new Date(Date.now() - 1000);
   next();
 });
-
 
 userSchema.methods.changePasswordAfter = function (JWTTimestamp: number) {
   if (this.passwordChangedAt) {

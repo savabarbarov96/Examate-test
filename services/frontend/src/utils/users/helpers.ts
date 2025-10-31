@@ -2,7 +2,7 @@ import { IUser } from "../../../../user-service/models/User";
 import { CreateUserPayload, GetUserPayload, UpdateUserPayload } from "./types";
 
 const BASE_URL =
-  import.meta.env.VITE_USER_API_URL || "http://localhost:8082/api/auth";
+  import.meta.env.VITE_USER_API_URL || "http://localhost:8082";
 
 // CREATE
 export const createUser = async (

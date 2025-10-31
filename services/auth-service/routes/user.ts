@@ -9,7 +9,6 @@ import {
   refreshAccessToken,
   changePassword,
   verify2fa,
-  verifyResetCode,
 } from "../controllers/authentication.js";
 import { getActiveSessions, getMe } from "../controllers/user.js";
 
@@ -27,7 +26,7 @@ const loginLimiter = rateLimit({
 });
 
 router.get("/refresh", refreshAccessToken);
-
+// router.get("/verify/:token", verifyActivationToken);
 router.post("/login", 
   // loginLimiter 
   login);
@@ -38,7 +37,7 @@ router.post("/logout", logout);
 router.post("/forgotPassword", 
   // loginLimiter,
   forgotPassword);
-router.post("/verify-code", verifyResetCode);
+// router.post("/verify-code", verifyResetCode);
 router.patch("/change-password", changePassword);
 
 router.get("/me", protect, getMe);
