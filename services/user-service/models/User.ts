@@ -13,13 +13,15 @@ export interface IUser extends IUserMethods {
   username: string;
   client: string;
   dob?: Date;
-  profilePic?: string
+  profilePic?: string;
   status: string;
   accountLocked: boolean;
   password: string;
   phone?: string;
   passwordConfirm?: string;
   passwordChangedAt?: Date;
+  verificationToken?: string;
+  verificationExpires?: Date;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   twoFactorEnabled: boolean;
@@ -76,6 +78,8 @@ const userSchema = new mongoose.Schema<IUser>(
     twoFactorEnabled: { type: Boolean, default: false },
     failedLoginAttempts: { type: Number, default: 0 },
     lastFailedLoginAttempt: Date,
+    verificationToken: String,
+    verificationExpires: Date,
     isLocked: { type: Boolean, default: false },
     verificationCode: { type: String, select: false },
     verificationCodeExpires: Date,

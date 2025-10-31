@@ -3,6 +3,7 @@ import crypto from "crypto";
 
 import User from "../models/User.js";
 import { RoleModel } from "../models/Role.js";
+import { sendEmail } from "../utils/email.js";
 
 // GET all users (requires "view" permission)
 export const getAllUsers = async (
@@ -12,9 +13,7 @@ export const getAllUsers = async (
 ) => {
   try {
     const users = await User.find()
-      .select(
-        "firstName lastName email status createdAt username"
-      )
+      .select("firstName lastName email status createdAt username")
       // .populate(
       //   "role"
       //   // , "name permissions"
@@ -102,6 +101,10 @@ export const createUser = async (req, res, next) => {
 
     const tempPassword = crypto.randomBytes(12).toString("base64url");
 
+    const token = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const tokenExpires = Date.now() + 12 * 60 * 60 * 1000;
+
     const user = await User.create({
       email,
       username,
@@ -114,9 +117,29 @@ export const createUser = async (req, res, next) => {
       profilePic: profilePicBase64,
       password: tempPassword,
       passwordConfirm: tempPassword,
+      verificationToken: hashedToken,
+      verificationExpires: tokenExpires,
     });
 
-    res.status(201).json({ status: "success", data: user });
+    const activationLink = `${process.env.CLIENT_ORIGIN}/activate/${token}`;
+
+    await sendEmail({
+      to: email,
+      subject: "Activate your account",
+      html: `
+        <h2>Welcome, ${firstName}!</h2>
+        <p>Your username: <b>${username}</b></p>
+        <p>Click below to activate your account:</p>
+        <a href="${activationLink}" target="_blank">${activationLink}</a>
+        <p>This link is valid for 12 hours.</p>
+      `,
+    });
+
+    res.status(201).json({
+      status: "success",
+      message: "User created and verification email sent.",
+      data: user,
+    });
   } catch (err) {
     next(err);
   }
@@ -172,18 +195,22 @@ export const deleteUser = async (
   res: Response,
   next: NextFunction
 ) => {
-  // try {
-  //   const { id } = req.params;
-  //   const user = await User.findById(id);
-  //   if (!user) return res.status(404).json({ message: "User not found" });
-  //   // Prevent deleting admins if restricted
-  //   const role = await RoleModel.findById(user.role);
-  //   if (role?.restrictions?.cannotManageSysAdmin) {
-  //     return res.status(403).json({ message: "Cannot delete admin users" });
-  //   }
-  //   await user.deleteOne();
-  //   res.status(200).json({ status: "success", message: "User deleted" });
-  // } catch (err) {
-  //   next(err);
-  // }
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    
+    console.log({ id });
+    
+    // Prevent deleting admins if restricted
+    // const role = await RoleModel.findById(user.role);
+    // if (role?.restrictions?.cannotManageSysAdmin) {
+    //   return res.status(403).json({ message: "Cannot delete admin users" });
+    // }
+
+    await user.deleteOne();
+    res.status(200).json({ status: "success", message: "User deleted" });
+  } catch (err) {
+    next(err);
+  }
 };

@@ -94,7 +94,7 @@ export const login = async (
         console.warn(`Geo lookup failed for IP: ${ip}`);
       }
     }
-  
+
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -138,7 +138,7 @@ export const login = async (
         `User ${user.username} unlocked automatically after lock expired.`
       );
     }
-    
+
     if (user?.isLocked) {
       await recordLoginAttempt({
         userId: user._id.toString(),
@@ -260,7 +260,7 @@ export const login = async (
         sameSite: isProduction ? "none" : "lax",
         domain: ".examate.net",
       });
-      
+
       createAndSendTokens(user, res);
       return;
     }
@@ -533,67 +533,6 @@ export const forgotPassword = async (
   }
 };
 
-export const verifyResetCode = async (
-  req: Request,
-  res: Response
-): Promise<any> => {
-  const { email, code } = req.body;
-
-  const user = await User.findOne({ email }).select("+verificationCode");
-
-  if (
-    !user ||
-    !user.verificationCode ||
-    user.verificationCode !== code ||
-    !user.verificationCodeExpires ||
-    user.verificationCodeExpires < new Date()
-  ) {
-    return res.status(400).json({ message: "Incorrect code." });
-  }
-
-  user.verificationCode = undefined;
-  user.verificationCodeExpires = undefined;
-  await user.save({ validateBeforeSave: false });
-
-  return res.status(200).json({ message: "Code verified. Proceed to reset." });
-};
-
-export const changePassword = async (
-  req: Request,
-  res: Response
-): Promise<any> => {
-  const { email, newPassword } = req.body;
-
-  if (!email || !newPassword) {
-    return res
-      .status(400)
-      .json({ message: "Email and password are required." });
-  }
-
-  try {
-    const user = await User.findOne({ email }).select("+password");
-
-    if (!user) {
-      return res.status(400).json({ message: "User not found." });
-    }
-
-    user.password = newPassword;
-    user.passwordChangedAt = new Date();
-    user.verificationCode = undefined;
-    user.verificationCodeExpires = undefined;
-
-    await user.save({ validateBeforeSave: false });
-
-    createAndSendTokens(user, res);
-    return res
-      .status(200)
-      .json({ message: "Your password has been updated successfully." });
-  } catch (err) {
-    console.error("Error resetting password:", err);
-    return res.status(500).json({ message: "Something went wrong." });
-  }
-};
-
 export const refreshAccessToken = async (
   req: Request,
   res: Response
@@ -659,19 +598,178 @@ export const logout = async (req: Request, res: Response) => {
   res.status(200).json({ message: "Logged out successfully" });
 };
 
-async function getLocation(ip: string) {
-  try {
-    const response = await geoReader.city(ip);
+// async function getLocation(ip: string) {
+//   try {
+//     const response = await geoReader.city(ip);
 
-    return {
-      country: response?.country?.isoCode ?? null,
-      countryName: response?.country?.names?.en ?? null,
-      city: response?.city?.names?.en ?? null,
-      latitude: response?.location?.latitude ?? null,
-      longitude: response?.location?.longitude ?? null,
-    };
+//     return {
+//       country: response?.country?.isoCode ?? null,
+//       countryName: response?.country?.names?.en ?? null,
+//       city: response?.city?.names?.en ?? null,
+//       latitude: response?.location?.latitude ?? null,
+//       longitude: response?.location?.longitude ?? null,
+//     };
+//   } catch (err) {
+//     console.error("Geo lookup failed:", err);
+//     return null;
+//   }
+// }
+
+export const verifyActivationOrResetPassToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(req.params.token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      verificationToken: hashedToken,
+      verificationExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired activation link" });
+    }
+
+    res.status(200).json({
+      status: "success",
+      message: "Token valid. Proceed to change password.",
+      userId: user._id,
+    });
   } catch (err) {
-    console.error("Geo lookup failed:", err);
-    return null;
+    next(err);
   }
-}
+};
+
+export const changePassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId, newPassword } = req.body;
+
+    if (!userId || !newPassword) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const user = await User.findById(userId).select("+password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.password = newPassword;
+    user.passwordConfirm = newPassword;
+    user.verificationToken = undefined;
+    user.verificationExpires = undefined;
+    user.status = "verified";
+    await user.save();
+
+    const ipHeader = req.headers["x-forwarded-for"] || req.ip;
+    const ip = Array.isArray(ipHeader) ? ipHeader[0] : ipHeader || req.ip;
+    const ipString = ip ?? "127.0.0.1";
+
+    const userAgent = req.headers["user-agent"] || "";
+    const { browser, cpu, device, os } = UAParser(userAgent);
+
+    let geoData: any = null;
+
+    try {
+      geoData = geoReader.city(ipString);
+    } catch (err: any) {
+      if (err.name === "AddressNotFoundError") {
+        console.warn(`Geo lookup failed for IP: ${ip}`);
+      }
+    }
+
+    const session = await createSession(user._id.toString());
+
+    res.cookie("sessionId", session.sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    });
+
+    createAndSendTokens(user, res);
+
+    await recordLoginAttempt({
+      userId: user._id.toString(),
+      username: user.username,
+      ip: ipString,
+      device: { browser, cpu, device, os },
+      status: "success",
+      message: "Password changed successfully ",
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Password changed successfully",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const sendActivationOrResetPassLink = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, purpose = "activation" } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.status === "verified") {
+      return res.status(400).json({ message: "User already verified" });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    user.verificationToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+    user.verificationExpires = new Date(Date.now() + 12 * 60 * 60 * 1000);
+    await user.save({ validateBeforeSave: false });
+
+    const link = `${
+      process.env.CLIENT_ORIGIN || "http://localhost:8080"
+    }${purpose === " activation" ? "/activate" : "change-password"}/${token}`;
+
+    await sendEmail({
+      to: user.email,
+      subject:
+        purpose === "activation"
+          ? "Account Activation Link"
+          : "Change Password Link",
+      html: `
+        <p>Hello, ${user.username}!</p>
+        <p>Here is your ${
+          purpose === "activation" ? "activation" : "password change"
+        } link:
+        <a href="${link}">Click here</a>
+        <p>This link is valid for 12 hours.</p>
+      `,
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: `New ${purpose} link sent to your email.`,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
