@@ -12,7 +12,7 @@ async function handleResponse(res: Response) {
 }
 
 export async function login(username: string, password: string) {
-  const res = await fetch(`${BASE_URL}/login`, {
+  const res = await fetch(`${BASE_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -23,7 +23,7 @@ export async function login(username: string, password: string) {
 }
 
 export async function verify2FA(twoFAIDToken: string, twoFACode: string) {
-  const res = await fetch(`${BASE_URL}/verify-2fa`, {
+  const res = await fetch(`${BASE_URL}/api/auth/verify-2fa`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -37,7 +37,7 @@ export async function verify2FA(twoFAIDToken: string, twoFACode: string) {
 }
 
 export async function sendResetEmail(email: string) {
-  const res = await fetch(`${BASE_URL}/forgotPassword`, {
+  const res = await fetch(`${BASE_URL}/api/auth/forgotPassword`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -48,7 +48,7 @@ export async function sendResetEmail(email: string) {
 }
 
 export async function logout() {
-  const res = await fetch(`${BASE_URL}/logout`, {
+  const res = await fetch(`${BASE_URL}/api/auth/logout`, {
     method: "POST",
     credentials: "include",
   });
@@ -57,7 +57,7 @@ export async function logout() {
 }
 
 export async function verifyCode(email: string, code: string) {
-  const res = await fetch(`${BASE_URL}/verify-code`, {
+  const res = await fetch(`${BASE_URL}/api/auth/verify-code`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -68,7 +68,7 @@ export async function verifyCode(email: string, code: string) {
 }
 
 export async function changePassword(email: string, newPassword: string) {
-  const res = await fetch(`${BASE_URL}/change-password`, {
+  const res = await fetch(`${BASE_URL}/api/auth/change-password`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -79,10 +79,9 @@ export async function changePassword(email: string, newPassword: string) {
 }
 
 export const fetchActiveSessions = async () => {
-  const url =
-    import.meta.env.VITE_API_URL || "http://localhost:8081/api/session/count";
-
-  const res = await fetch(url, { credentials: "include" });
+  const res = await fetch(`${BASE_URL}/api/session/count`, {
+    credentials: "include",
+  });
 
   return handleResponse(res);
 };

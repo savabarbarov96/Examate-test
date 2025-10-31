@@ -21,7 +21,7 @@ export default function Dashboard() {
 
     extractActiveSessions();
 
-    const socket = io(import.meta.env.VITE_API_URL || "http://localhost:8081");
+    const socket = io(import.meta.env.VITE_AUTH_API_URL || "http://localhost:8081");
 
     socket.on("activeSessionsUpdate", (data: { activeSessions: number }) => {
       setActiveSessions(data.activeSessions);

@@ -6,8 +6,7 @@ export type Role = {
 
 export const getAllRoles = async (): Promise<Role[] | null> => {
   try {
-    const res = await fetch("http://localhost:8082/api/roles"
-        // "https://user-service.examate.net/api/roles"
+    const res = await fetch("https://user-service.examate.net/api/roles"
         , {
       credentials: "include",
     });
@@ -24,8 +23,7 @@ export const getAllRoles = async (): Promise<Role[] | null> => {
 
 export const createRole = async (role: Partial<Role>): Promise<Role | null> => {
   try {
-    const res = await fetch("http://localhost:8082/api/roles"
-        // "https://user-service.examate.net/api/roles"
+    const res = await fetch("https://user-service.examate.net/api/roles"
         , {
       method: "POST",
       credentials: "include",
@@ -45,8 +43,7 @@ export const createRole = async (role: Partial<Role>): Promise<Role | null> => {
 
 export const deleteRole = async (id: string): Promise<boolean> => {
   try {
-    const res = await fetch(`http://localhost:8082/api/roles/${id}`
-        // `https://user-service.examate.net/api/roles/${id}`
+    const res = await fetch(`https://user-service.examate.net/api/roles/${id}`
         , {
       method: "DELETE",
       credentials: "include",
@@ -65,8 +62,7 @@ export const updateRole = async (
   role: Partial<Role>
 ): Promise<Role | null> => {
   try {
-    const res = await fetch(`http://localhost:8082/api/roles/${id}`
-        // `https://user-service.examate.net/api/roles/${id}`
+    const res = await fetch(`https://user-service.examate.net/api/roles/${id}`
         , {
       method: "PATCH",
       credentials: "include",
