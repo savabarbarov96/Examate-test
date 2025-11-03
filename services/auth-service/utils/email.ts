@@ -4,8 +4,8 @@ export const sendEmail = async (options) => {
   const transporter = nodemailer.createTransport({
     // @ts-ignore
     host: "mail.exa-ms.com",
-    secure: false,
-    port: "587",
+    secure: true,
+    port: "465",
     auth: {
       user: process.env.EMAIL_USERNAME,
       pass: process.env.EMAIL_PASSWORD,
@@ -15,6 +15,11 @@ export const sendEmail = async (options) => {
     },
   });
 
+  console.log({
+      user: process.env.EMAIL_USERNAME,
+      pass: process.env.EMAIL_PASSWORD,
+    });
+  
   const mailOptions = {
     from: '"ExaMS" <exams@exa-ms.com>',
     to: options.email,
@@ -22,5 +27,7 @@ export const sendEmail = async (options) => {
     text: options.message,
   };
 
+  console.log({ mailOptions });
+  
   await transporter.sendMail(mailOptions);
 };
