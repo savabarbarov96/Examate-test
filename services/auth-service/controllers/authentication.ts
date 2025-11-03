@@ -527,6 +527,8 @@ export const forgotPassword = async (
     user.verificationCodeExpires = undefined;
     await user.save({ validateBeforeSave: false });
 
+    console.log({ err });
+    
     return res.status(500).json({
       message: "Failed to send verification code. Please try again.",
     });
