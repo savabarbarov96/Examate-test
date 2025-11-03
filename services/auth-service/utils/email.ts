@@ -1,8 +1,15 @@
-import nodemailer from "nodemailer";
+import nodemailer, { TransportOptions } from "nodemailer";
 
-export const sendEmail = async (options) => {
+interface EmailOptions {
+  to: string;
+  email: string;
+  subject: string;
+  message?: string;
+  html?: string;
+}
+
+export const sendEmail = async (options: EmailOptions) => {
   const transporter = nodemailer.createTransport({
-    // @ts-ignore
     host: "mail.exa-ms.com",
     secure: true,
     port: "465",
@@ -13,13 +20,8 @@ export const sendEmail = async (options) => {
     tls: {
       rejectUnauthorized: false,
     },
-  });
+  } as TransportOptions);
 
-  console.log({
-      user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD,
-    });
-  
   const mailOptions = {
     from: '"ExaMS" <exams@exa-ms.com>',
     to: options.email,
@@ -27,7 +29,5 @@ export const sendEmail = async (options) => {
     text: options.message,
   };
 
-  console.log({ mailOptions });
-  
   await transporter.sendMail(mailOptions);
 };
