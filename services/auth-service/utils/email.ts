@@ -7,8 +7,8 @@ export const sendEmail = async (options) => {
     secure: true,
     port: "465",
     auth: {
-      user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD,
+      user: "exams@exa-ms.com",
+      pass: "Pao5z39#03Kq8&cf",
     },
     tls: {
       rejectUnauthorized: false,
