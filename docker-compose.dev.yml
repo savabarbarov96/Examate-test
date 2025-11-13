@@ -1,0 +1,47 @@
+version: '3.8'
+
+# Development overrides for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # Auth Service - Development Mode
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./services/auth-service:/app
+      - /app/node_modules
+      - /app/dist
+    command: npm run dev
+
+  # User Service - Development Mode
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./services/user-service:/app
+      - /app/node_modules
+      - /app/dist
+    command: npm run dev
+
+  # Frontend - Development Mode
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      - VITE_API_URL=http://localhost:5001
+      - VITE_AUTH_API_URL=http://localhost:5000
+    volumes:
+      - ./services/frontend:/app
+      - /app/node_modules
+      - /app/dist
+    ports:
+      - "8080:8080"
+    command: npm run dev

@@ -5,6 +5,7 @@ import * as crypto from "crypto";
 import { UAParser } from "ua-parser-js";
 
 import User, { IUser } from "../models/User.js";
+import LoginAttempt from "../models/LoginAttempt.js";
 import { sendEmail } from "../utils/email.js";
 import { HydratedDocument } from "mongoose";
 import { createSession, terminateSession } from "../utils/session.js";
@@ -752,7 +753,7 @@ export const sendActivationOrResetPassLink = async (
     }${purpose === " activation" ? "/activate" : "change-password"}/${token}`;
 
     await sendEmail({
-      to: user.email,
+      email: user.email,
       subject:
         purpose === "activation"
           ? "Account Activation Link"
@@ -773,5 +774,37 @@ export const sendActivationOrResetPassLink = async (
     });
   } catch (err) {
     next(err);
+  }
+};
+
+export const getLastLogin = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    // @ts-ignore
+    const userId = req.user._id.toString();
+
+    // Query the two most recent successful logins so we can skip the current session
+    const recentAttempts = await LoginAttempt.find({
+      userId,
+      status: "success",
+    })
+      .sort({ timestamp: -1 })
+      .limit(2);
+
+    if (!recentAttempts.length) {
+      return res.status(200).json({ lastLogin: null });
+    }
+
+    const [, previousAttempt] = recentAttempts;
+    const lastRelevantAttempt = previousAttempt ?? recentAttempts[0];
+
+    res.status(200).json({
+      lastLogin: lastRelevantAttempt.timestamp.toISOString(),
+    });
+  } catch (error) {
+    console.error("Error in getLastLogin:", error);
+    res.status(500).json({ message: "Failed to fetch last login" });
   }
 };

@@ -1,16 +1,19 @@
+import dotenv from "dotenv";
+
+// IMPORTANT: Load environment variables FIRST before any other imports
+dotenv.config();
+
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
-import http from "http"; // <-- add this
+import http from "http";
 
 import { watchSessions } from "./utils/session.js";
 import authRoutes from "./routes/user.js";
 import sessionRoutes from "./routes/session.js";
-
-dotenv.config();
+import dashboardRoutes from "./routes/dashboard.js";
 const app = express();
 
 const origin = process.env.CLIENT_ORIGIN?.replace(/^"|"$/g, '') || "https://dev.examate.net";
@@ -18,14 +21,14 @@ const origin = process.env.CLIENT_ORIGIN?.replace(/^"|"$/g, '') || "https://dev.
 app.use(cors({
   origin: origin,
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.options(/.*/, cors({
   origin: origin,
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
@@ -48,6 +51,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/session", sessionRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 const PORT = process.env.PORT || 5000;
 

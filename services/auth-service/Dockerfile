@@ -25,8 +25,8 @@ COPY --from=builder /app/package*.json ./
 # Install only production dependencies
 RUN npm install
 
-# Expose app port (adjust if not 3000)
-EXPOSE 8081
+# Expose app port
+EXPOSE 5000
 
 # Start the app
 CMD ["node", "dist/server.js"]

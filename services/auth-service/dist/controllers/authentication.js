@@ -3,10 +3,12 @@ import jwt from "jsonwebtoken";
 import * as crypto from "crypto";
 import { UAParser } from "ua-parser-js";
 import User from "../models/User.js";
+import LoginAttempt from "../models/LoginAttempt.js";
 import { sendEmail } from "../utils/email.js";
 import { createSession, terminateSession } from "../utils/session.js";
 import { geoReader } from "../utils/geo.js";
 import { recordLoginAttempt } from "../utils/logger.js";
+const isProduction = process.env.NODE_ENV === "production";
 const signToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: "15m",
@@ -34,15 +36,17 @@ const createAndSendTokens = (user, res) => {
     });
     res.cookie("jwt", accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
         maxAge: 15 * 60 * 1000,
+        domain: ".examate.net",
     });
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
         maxAge: 8 * 24 * 60 * 60 * 1000,
+        domain: ".examate.net",
     });
     user.password = undefined;
     res.status(200).json({
@@ -88,7 +92,7 @@ export const login = async (req, res, next) => {
                 status: "failed",
                 message: "Invalid username",
             });
-            return res.status(401).json({ message: "Invalid username" });
+            return res.status(401).json({ message: "Invalid credentials" });
         }
         const now = new Date();
         if (user?.isLocked && user.lockUntil && user.lockUntil <= now) {
@@ -192,8 +196,9 @@ export const login = async (req, res, next) => {
             const session = await createSession(user._id.toString());
             res.cookie("sessionId", session.sessionId, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+                secure: isProduction,
+                sameSite: isProduction ? "none" : "lax",
+                domain: ".examate.net",
             });
             createAndSendTokens(user, res);
             return;
@@ -363,8 +368,9 @@ export const verify2fa = async (req, res, next) => {
         const session = await createSession(user._id.toString());
         res.cookie("sessionId", session.sessionId, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
+            domain: ".examate.net",
         });
         createAndSendTokens(user, res);
     }
@@ -400,51 +406,10 @@ export const forgotPassword = async (req, res) => {
         user.verificationCode = undefined;
         user.verificationCodeExpires = undefined;
         await user.save({ validateBeforeSave: false });
+        console.log({ err });
         return res.status(500).json({
             message: "Failed to send verification code. Please try again.",
         });
-    }
-};
-export const verifyResetCode = async (req, res) => {
-    const { email, code } = req.body;
-    const user = await User.findOne({ email }).select("+verificationCode");
-    if (!user ||
-        !user.verificationCode ||
-        user.verificationCode !== code ||
-        !user.verificationCodeExpires ||
-        user.verificationCodeExpires < new Date()) {
-        return res.status(400).json({ message: "Incorrect code." });
-    }
-    user.verificationCode = undefined;
-    user.verificationCodeExpires = undefined;
-    await user.save({ validateBeforeSave: false });
-    return res.status(200).json({ message: "Code verified. Proceed to reset." });
-};
-export const changePassword = async (req, res) => {
-    const { email, newPassword } = req.body;
-    if (!email || !newPassword) {
-        return res
-            .status(400)
-            .json({ message: "Email and password are required." });
-    }
-    try {
-        const user = await User.findOne({ email }).select("+password");
-        if (!user) {
-            return res.status(400).json({ message: "User not found." });
-        }
-        user.password = newPassword;
-        user.passwordChangedAt = new Date();
-        user.verificationCode = undefined;
-        user.verificationCodeExpires = undefined;
-        await user.save({ validateBeforeSave: false });
-        createAndSendTokens(user, res);
-        return res
-            .status(200)
-            .json({ message: "Your password has been updated successfully." });
-    }
-    catch (err) {
-        console.error("Error resetting password:", err);
-        return res.status(500).json({ message: "Something went wrong." });
     }
 };
 export const refreshAccessToken = async (req, res) => {
@@ -466,9 +431,10 @@ export const refreshAccessToken = async (req, res) => {
         const newAccessToken = signToken(user._id.toString());
         res.cookie("jwt", newAccessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
             maxAge: 15 * 60 * 1000,
+            domain: ".examate.net",
         });
         res.status(200).json({ message: "Token refreshed" });
     }
@@ -484,29 +450,176 @@ export const logout = async (req, res) => {
     }
     res.clearCookie("jwt", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        domain: ".examate.net",
     });
     res.clearCookie("refreshToken", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        domain: ".examate.net",
     });
     res.status(200).json({ message: "Logged out successfully" });
 };
-async function getLocation(ip) {
+// async function getLocation(ip: string) {
+//   try {
+//     const response = await geoReader.city(ip);
+//     return {
+//       country: response?.country?.isoCode ?? null,
+//       countryName: response?.country?.names?.en ?? null,
+//       city: response?.city?.names?.en ?? null,
+//       latitude: response?.location?.latitude ?? null,
+//       longitude: response?.location?.longitude ?? null,
+//     };
+//   } catch (err) {
+//     console.error("Geo lookup failed:", err);
+//     return null;
+//   }
+// }
+export const verifyActivationOrResetPassToken = async (req, res, next) => {
     try {
-        const response = await geoReader.city(ip);
-        return {
-            country: response?.country?.isoCode ?? null,
-            countryName: response?.country?.names?.en ?? null,
-            city: response?.city?.names?.en ?? null,
-            latitude: response?.location?.latitude ?? null,
-            longitude: response?.location?.longitude ?? null,
-        };
+        const hashedToken = crypto
+            .createHash("sha256")
+            .update(req.params.token)
+            .digest("hex");
+        const user = await User.findOne({
+            verificationToken: hashedToken,
+            verificationExpires: { $gt: Date.now() },
+        });
+        if (!user) {
+            return res
+                .status(400)
+                .json({ message: "Invalid or expired activation link" });
+        }
+        res.status(200).json({
+            status: "success",
+            message: "Token valid. Proceed to change password.",
+            userId: user._id,
+        });
     }
     catch (err) {
-        console.error("Geo lookup failed:", err);
-        return null;
+        next(err);
     }
-}
+};
+export const changePassword = async (req, res, next) => {
+    try {
+        const { userId, newPassword } = req.body;
+        if (!userId || !newPassword) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
+        const user = await User.findById(userId).select("+password");
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        user.password = newPassword;
+        user.passwordConfirm = newPassword;
+        user.verificationToken = undefined;
+        user.verificationExpires = undefined;
+        user.status = "verified";
+        await user.save();
+        const ipHeader = req.headers["x-forwarded-for"] || req.ip;
+        const ip = Array.isArray(ipHeader) ? ipHeader[0] : ipHeader || req.ip;
+        const ipString = ip ?? "127.0.0.1";
+        const userAgent = req.headers["user-agent"] || "";
+        const { browser, cpu, device, os } = UAParser(userAgent);
+        let geoData = null;
+        try {
+            geoData = geoReader.city(ipString);
+        }
+        catch (err) {
+            if (err.name === "AddressNotFoundError") {
+                console.warn(`Geo lookup failed for IP: ${ip}`);
+            }
+        }
+        const session = await createSession(user._id.toString());
+        res.cookie("sessionId", session.sessionId, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        });
+        createAndSendTokens(user, res);
+        await recordLoginAttempt({
+            userId: user._id.toString(),
+            username: user.username,
+            ip: ipString,
+            device: { browser, cpu, device, os },
+            status: "success",
+            message: "Password changed successfully ",
+        });
+        res.status(200).json({
+            status: "success",
+            message: "Password changed successfully",
+        });
+    }
+    catch (err) {
+        next(err);
+    }
+};
+export const sendActivationOrResetPassLink = async (req, res, next) => {
+    try {
+        const { email, purpose = "activation" } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        if (user.status === "verified") {
+            return res.status(400).json({ message: "User already verified" });
+        }
+        const token = crypto.randomBytes(32).toString("hex");
+        user.verificationToken = crypto
+            .createHash("sha256")
+            .update(token)
+            .digest("hex");
+        user.verificationExpires = new Date(Date.now() + 12 * 60 * 60 * 1000);
+        await user.save({ validateBeforeSave: false });
+        const link = `${process.env.CLIENT_ORIGIN || "http://localhost:8080"}${purpose === " activation" ? "/activate" : "change-password"}/${token}`;
+        await sendEmail({
+            email: user.email,
+            subject: purpose === "activation"
+                ? "Account Activation Link"
+                : "Change Password Link",
+            html: `
+        <p>Hello, ${user.username}!</p>
+        <p>Here is your ${purpose === "activation" ? "activation" : "password change"} link:
+        <a href="${link}">Click here</a>
+        <p>This link is valid for 12 hours.</p>
+      `,
+        });
+        res.status(200).json({
+            status: "success",
+            message: `New ${purpose} link sent to your email.`,
+        });
+    }
+    catch (err) {
+        next(err);
+    }
+};
+export const getLastLogin = async (req, res) => {
+    try {
+        // @ts-ignore
+        const userId = req.user._id.toString();
+        // Query the two most recent successful logins so we can skip the current session
+        const recentAttempts = await LoginAttempt.find({
+            userId,
+            status: "success",
+        })
+            .sort({ timestamp: -1 })
+            .limit(2);
+        if (!recentAttempts.length) {
+            return res.status(200).json({ lastLogin: null });
+        }
+        const [, previousAttempt] = recentAttempts;
+        const lastRelevantAttempt = previousAttempt ?? recentAttempts[0];
+        res.status(200).json({
+            lastLogin: lastRelevantAttempt.timestamp.toISOString(),
+        });
+    }
+    catch (error) {
+        console.error("Error in getLastLogin:", error);
+        res.status(500).json({ message: "Failed to fetch last login" });
+    }
+};

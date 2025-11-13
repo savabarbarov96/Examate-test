@@ -1,7 +1,6 @@
 import nodemailer, { TransportOptions } from "nodemailer";
 
 interface EmailOptions {
-  to: string;
   email: string;
   subject: string;
   message?: string;

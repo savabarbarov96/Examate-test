@@ -9,6 +9,7 @@ import {
   refreshAccessToken,
   changePassword,
   verify2fa,
+  getLastLogin,
 } from "../controllers/authentication.js";
 import { getActiveSessions, getMe } from "../controllers/user.js";
 
@@ -41,5 +42,6 @@ router.post("/forgotPassword",
 router.patch("/change-password", changePassword);
 
 router.get("/me", protect, getMe);
+router.get("/last-login", protect, getLastLogin);
 
 export default router;

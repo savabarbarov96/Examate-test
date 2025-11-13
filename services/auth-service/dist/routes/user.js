@@ -1,6 +1,6 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import { forgotPassword, login, logout, protect, refreshAccessToken, changePassword, verify2fa, verifyResetCode, } from "../controllers/authentication.js";
+import { forgotPassword, login, logout, protect, refreshAccessToken, changePassword, verify2fa, getLastLogin, } from "../controllers/authentication.js";
 import { getMe } from "../controllers/user.js";
 const router = express.Router();
 const loginLimiter = rateLimit({
@@ -13,6 +13,7 @@ const loginLimiter = rateLimit({
     legacyHeaders: false,
 });
 router.get("/refresh", refreshAccessToken);
+// router.get("/verify/:token", verifyActivationToken);
 router.post("/login", 
 // loginLimiter 
 login);
@@ -21,7 +22,8 @@ router.post("/logout", logout);
 router.post("/forgotPassword", 
 // loginLimiter,
 forgotPassword);
-router.post("/verify-code", verifyResetCode);
+// router.post("/verify-code", verifyResetCode);
 router.patch("/change-password", changePassword);
 router.get("/me", protect, getMe);
+router.get("/last-login", protect, getLastLogin);
 export default router;

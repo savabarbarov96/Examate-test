@@ -39,6 +39,8 @@ const userSchema = new mongoose.Schema({
     twoFactorEnabled: { type: Boolean, default: false },
     failedLoginAttempts: { type: Number, default: 0 },
     lastFailedLoginAttempt: Date,
+    verificationToken: String,
+    verificationExpires: Date,
     isLocked: { type: Boolean, default: false },
     verificationCode: { type: String, select: false },
     verificationCodeExpires: Date,

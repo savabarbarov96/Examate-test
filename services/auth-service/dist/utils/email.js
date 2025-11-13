@@ -1,13 +1,12 @@
 import nodemailer from "nodemailer";
 export const sendEmail = async (options) => {
     const transporter = nodemailer.createTransport({
-        // @ts-ignore
         host: "mail.exa-ms.com",
-        secure: false,
-        port: "587",
+        secure: true,
+        port: "465",
         auth: {
-            user: process.env.EMAIL_USERNAME,
-            pass: process.env.EMAIL_PASSWORD,
+            user: "exams@exa-ms.com",
+            pass: "Pao5z39#03Kq8&cf",
         },
         tls: {
             rejectUnauthorized: false,
