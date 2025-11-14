@@ -22,11 +22,11 @@ help:
 
 # Initial setup
 setup:
-	@./scripts/setup.sh
+	@bash scripts/setup.sh
 
 # Check if ports are available
 check-ports:
-	@./scripts/check-ports.sh
+	@bash scripts/check-ports.sh
 
 # Build all images
 build:

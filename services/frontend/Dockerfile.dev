@@ -14,5 +14,6 @@ COPY . .
 # Expose Vite dev server port
 EXPOSE 8080
 
-# Start in development mode with hot reload
+# Environment variables from docker-compose will be available during runtime
+# Start in development mode with hot reload, listening on 0.0.0.0 for Docker network access
 CMD ["npm", "run", "dev"]

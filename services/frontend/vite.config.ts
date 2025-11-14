@@ -12,6 +12,13 @@ export default defineConfig({
     },
   },
   server: {
-    port: 8080
+    host: "0.0.0.0", // expose dev server to Docker network
+    port: parseInt(process.env.VITE_DEV_PORT || "8080"),
+    middlewareMode: false,
+    hmr: {
+      protocol: "ws",
+      host: "localhost",
+      port: parseInt(process.env.FRONTEND_DEV_PORT || "8080"),
+    }
   }
 })

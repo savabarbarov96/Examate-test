@@ -98,10 +98,13 @@ services:
     build:
       context: ./services/frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5001}
+        VITE_AUTH_API_URL: ${VITE_AUTH_API_URL:-http://localhost:5000}
     container_name: examate-frontend
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "${FRONTEND_PORT:-8080}:80"
     depends_on:
       - auth-service
       - user-service

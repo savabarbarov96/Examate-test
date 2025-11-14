@@ -90,6 +90,7 @@ docker-compose up -d
 ```bash
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
+If port `8080` is in use locally, export `FRONTEND_DEV_PORT=<free-port>` before running the command to remap the Vite dev server (defaults to `8080`).
 
 **Using Makefile (recommended):**
 ```bash
