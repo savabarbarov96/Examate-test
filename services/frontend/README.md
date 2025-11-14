@@ -14,7 +14,7 @@ React-based frontend application for the Examate exam management platform.
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - Running auth-service (port 5000)
 - Running user-service (port 5001)
 
@@ -37,7 +37,7 @@ cp .env.example .env
 npm run dev
 ```
 
-5. Open browser at `http://localhost:8080`
+5. Open browser at `http://localhost:3000`
 
 ## Environment Variables
 
@@ -49,7 +49,7 @@ npm run dev
 ## Available Scripts
 
 ```bash
-npm run dev          # Start Vite dev server (port 8080)
+npm run dev          # Start Vite dev server (port 3000)
 npm run build        # Build for production
 npm run preview      # Preview production build
 npm run lint         # Run ESLint
@@ -118,7 +118,7 @@ import api from '@/utils/api'
 
 ## Development Notes
 
-- Dev server runs on port **8080**
+- Dev server runs on port **3000**
 - Hot module replacement (HMR) enabled
 - TypeScript strict mode enabled
 - All API requests include `withCredentials: true` for cookie handling

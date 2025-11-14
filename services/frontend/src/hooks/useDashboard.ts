@@ -21,7 +21,6 @@ import {
   updateWidget as apiUpdateWidget,
   deleteWidget as apiDeleteWidget,
   reorderWidgets as apiReorderWidgets,
-  getWidgetData,
 } from '@/utils/dashboard/api';
 
 const normalizeLegendVisibility = (
@@ -147,71 +146,8 @@ export function useDashboard(): UseDashboardReturn {
         listWidgets().catch(() => []),
       ]);
 
-      const stubWidgets: DashboardWidget[] = [
-        {
-          id: 'stub-1',
-          type: 'activeAll',
-          title: 'Active Exams Overview',
-          order: 0,
-          client: 'demo',
-          legendVisibility: {},
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'stub-2',
-          type: 'historyAll',
-          title: 'Exam History',
-          order: 1,
-          client: 'demo',
-          legendVisibility: {},
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'stub-3',
-          type: 'paidUnpaid',
-          title: 'Paid vs Unpaid',
-          order: 2,
-          client: 'demo',
-          legendVisibility: {},
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'stub-4',
-          type: 'location',
-          title: 'Exams by Location',
-          order: 3,
-          client: 'demo',
-          legendVisibility: {},
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'stub-5',
-          type: 'proctoredOffline',
-          title: 'Proctored vs Offline',
-          order: 4,
-          client: 'demo',
-          legendVisibility: {},
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'stub-6',
-          type: 'passFail',
-          title: 'Pass vs Fail',
-          order: 5,
-          client: 'demo',
-          legendVisibility: {},
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-
-      const finalWidgets = widgets.length === 0 ? stubWidgets : widgets;
-      const normalized = normalizeWidgets(finalWidgets);
+      // Use actual widgets from the database only
+      const normalized = normalizeWidgets(widgets);
 
       safeSetState({
         lastLogin,
@@ -407,17 +343,20 @@ export function useDashboard(): UseDashboardReturn {
   const refreshWidgetData = useCallback(async (widgetId: string) => {
     try {
       safeSetState({ error: null });
-      // This will fetch fresh data from the API
-      // The actual data is not stored in this hook - widgets just track metadata
-      // The component using this hook should call getWidgetData(widgetId) separately
-      await getWidgetData(widgetId);
+
+      const widget = state.widgets.find((w) => w.id === widgetId);
+      if (!widget) {
+        throw new Error("Widget not found");
+      }
+
+      await getStatisticsWidgetData(widget.type);
     } catch (error) {
       console.error('[useDashboard] Failed to refresh widget data:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to refresh widget data';
       safeSetState({ error: errorMessage });
       throw error;
     }
-  }, [safeSetState]);
+  }, [safeSetState, state.widgets]);
 
   return {
     ...state,

@@ -11,7 +11,7 @@ const redisConfig = {
   family: 4, // Force IPv4
 };
 
-const redis = new Redis(process.env.REDIS_URL || "redis://127.0.0.1:6379", redisConfig);
+export const redis = new Redis(process.env.REDIS_URL || "redis://127.0.0.1:6379", redisConfig);
 
 redis.on("error", (err) => {
   console.error("Redis connection error:", err);

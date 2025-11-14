@@ -17,7 +17,7 @@ nano .env
 make dev
 ```
 
-That's it! Open http://localhost:8080
+That's it! Open http://localhost:3000 (dev hot reload)
 
 ---
 
@@ -48,13 +48,13 @@ make down
 | `make restart` | Restart all services |
 | `make clean` | Nuclear option - stop everything and delete volumes |
 | `make ps` | Show running containers |
-| `make check-ports` | Check if ports 5000, 5001, 6379, 8080, 27017 are free |
+| `make check-ports` | Check if ports 5000, 5001, 6379, 3000, 27017 are free |
 
 ---
 
 ## Service URLs
 
-- **Frontend**: http://localhost:8080
+- **Frontend (dev)**: http://localhost:3000
 - **Auth API**: http://localhost:5000
 - **User API**: http://localhost:5001
 
@@ -95,7 +95,7 @@ examate/
 ├── services/
 │   ├── auth-service/      # Port 5000
 │   ├── user-service/      # Port 5001
-│   └── frontend/          # Port 8080
+│   └── frontend/          # Port 8080 (prod) / 3000 (dev)
 ├── docker-compose.yml     # Production setup
 ├── docker-compose.dev.yml # Development overrides
 ├── Makefile              # Your best friend

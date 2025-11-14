@@ -1,10 +1,6 @@
 version: '3.8'
 
-# Development overrides for docker-compose.yml
-# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
-
 services:
-  # Auth Service - Development Mode
   auth-service:
     build:
       context: ./services/auth-service
@@ -16,22 +12,48 @@ services:
       - ./services/auth-service:/app
       - /app/node_modules
       - /app/dist
-    command: npm run dev
+    command: sh -c "npm install && npm run dev"
 
-  # User Service - Development Mode
   user-service:
     build:
       context: ./services/user-service
       dockerfile: Dockerfile.dev
     environment:
       - NODE_ENV=development
+      - CLIENT_ORIGIN=http://localhost:3000
     volumes:
       - ./services/user-service:/app
       - /app/node_modules
       - /app/dist
-    command: npm run dev
+    command: sh -c "npm install && npm run dev"
 
-  # Frontend - Development Mode
+  statistics-service:
+    build:
+      context: ./services/statistics-service
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+      - CLIENT_ORIGIN=http://localhost:3000
+    volumes:
+      - ./services/statistics-service:/app
+      - /app/node_modules
+      - /app/dist
+    command: sh -c "npm install && npm run dev"
+
+  dashboard-service:
+    build:
+      context: ./services/dashboard-service
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+      - CLIENT_ORIGIN=http://localhost:3000
+      - STATISTICS_SERVICE_URL=http://statistics-service:5003
+    volumes:
+      - ./services/dashboard-service:/app
+      - /app/node_modules
+      - /app/dist
+    command: sh -c "npm install && npm run dev"
+
   frontend:
     build:
       context: ./services/frontend
@@ -39,11 +61,14 @@ services:
     environment:
       - VITE_API_URL=http://localhost:5001
       - VITE_AUTH_API_URL=http://localhost:5000
-      - VITE_DEV_PORT=8080
+      - VITE_DASHBOARD_API_URL=http://localhost:5002
+      - VITE_STATISTICS_API_URL=http://localhost:5003
+      - VITE_DEV_PORT=3000
+      - FRONTEND_DEV_PORT=3000
     volumes:
       - ./services/frontend:/app
       - /app/node_modules
       - /app/dist
     ports:
-      - "${FRONTEND_DEV_PORT:-8080}:8080"
-    command: npm run dev
+      - "${FRONTEND_DEV_PORT:-3000}:3000"
+    command: sh -c "npm install && npm run dev"

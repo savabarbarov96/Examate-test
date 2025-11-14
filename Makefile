@@ -15,6 +15,7 @@ help:
 	@echo "  make logs         - View logs from all services"
 	@echo "  make logs-auth    - View logs from auth service"
 	@echo "  make logs-user    - View logs from user service"
+	@echo "  make logs-dashboard - View logs from dashboard service"
 	@echo "  make logs-frontend - View logs from frontend"
 	@echo "  make clean        - Stop services and remove volumes"
 	@echo "  make ps           - Show running containers"
@@ -62,6 +63,12 @@ logs-auth:
 logs-user:
 	docker-compose logs -f user-service
 
+logs-dashboard:
+	docker-compose logs -f dashboard-service
+
+logs-statistics:
+	docker-compose logs -f statistics-service
+
 logs-frontend:
 	docker-compose logs -f frontend
 
@@ -82,6 +89,14 @@ rebuild-auth:
 rebuild-user:
 	docker-compose build user-service
 	docker-compose up -d user-service
+
+rebuild-dashboard:
+	docker-compose build dashboard-service
+	docker-compose up -d dashboard-service
+
+rebuild-statistics:
+	docker-compose build statistics-service
+	docker-compose up -d statistics-service
 
 rebuild-frontend:
 	docker-compose build frontend

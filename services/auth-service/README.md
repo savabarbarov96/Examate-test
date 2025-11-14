@@ -22,7 +22,7 @@ Authentication and authorization microservice for Examate platform.
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - MongoDB instance
 - Redis instance
 - GeoLite2-City.mmdb file (for IP geolocation)
@@ -59,8 +59,9 @@ npm start
 | `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/examate` |
 | `REDIS_URL` | Redis connection URL | `redis://localhost:6379` |
 | `PORT` | Server port | `5000` |
-| `CLIENT_ORIGIN` | Frontend URL for CORS | `http://localhost:8080` |
+| `CLIENT_ORIGIN` | Frontend URL for CORS | `http://localhost:3000` (dev) / `http://localhost:8080` (prod) |
 | `NODE_ENV` | Environment mode | `development` or `production` |
+| `ACCESS_TOKEN_EXPIRES_IN_MINUTES` | Access token lifetime | `60` |
 | `JWT_SECRET` | Secret for access tokens | (generate long random string) |
 | `JWT_REFRESH_SECRET` | Secret for refresh tokens | (generate long random string) |
 | `JWT_COOKIE_EXPIRES_IN` | Cookie expiry in days | `90` |

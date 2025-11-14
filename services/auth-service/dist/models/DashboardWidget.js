@@ -43,6 +43,15 @@ const dashboardWidgetSchema = new Schema({
     },
 }, {
     timestamps: true,
+    toJSON: {
+        virtuals: true,
+        transform: function (doc, ret) {
+            ret.id = ret._id?.toString();
+            delete ret._id;
+            delete ret.__v;
+            return ret;
+        },
+    },
 });
 // Compound index for efficient querying by user and client
 dashboardWidgetSchema.index({ userId: 1, client: 1, order: 1 });

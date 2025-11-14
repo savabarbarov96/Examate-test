@@ -7,7 +7,7 @@ A microservices-based exam management platform built with TypeScript, Node.js, R
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        Frontend (React)                      │
-│                      http://localhost:8080                   │
+│          http://localhost:8080 (prod) / 3000 (dev)           │
 └──────────────┬─────────────────────────┬────────────────────┘
                │                         │
                ▼                         ▼
@@ -32,7 +32,9 @@ A microservices-based exam management platform built with TypeScript, Node.js, R
 
 - **Auth Service** (Port 5000): Authentication, authorization, session management, 2FA
 - **User Service** (Port 5001): User CRUD, role management, RBAC
-- **Frontend** (Port 8080): React SPA with Vite, TypeScript, Tailwind CSS
+- **Dashboard Service** (Port 5002): Dashboard widgets, layout management, proxy to statistics service
+- **Statistics Service** (Port 5003): Aggregated widgets, analytics catalog, chart data APIs
+- **Frontend** (Ports 8080 prod / 3000 dev): React SPA with Vite, TypeScript, Tailwind CSS
 
 ## Tech Stack
 
@@ -46,7 +48,7 @@ A microservices-based exam management platform built with TypeScript, Node.js, R
 
 - Docker 20.10+
 - Docker Compose 2.0+
-- Node.js 18+ (for local development without Docker)
+- Node.js 20+ (for local development without Docker)
 
 ## Quick Start (Docker - Recommended)
 
@@ -90,7 +92,7 @@ docker-compose up -d
 ```bash
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
-If port `8080` is in use locally, export `FRONTEND_DEV_PORT=<free-port>` before running the command to remap the Vite dev server (defaults to `8080`).
+If port `3000` is in use locally, export `FRONTEND_DEV_PORT=<free-port>` before running the command to remap the Vite dev server (defaults to `3000`).
 
 **Using Makefile (recommended):**
 ```bash
@@ -102,9 +104,12 @@ make down     # Stop all services
 
 ### 4. Access the Application
 
-- **Frontend**: http://localhost:8080
+- **Frontend (dev)**: http://localhost:3000
+- **Frontend (prod)**: http://localhost:8080
 - **Auth API**: http://localhost:5000
 - **User API**: http://localhost:5001
+- **Dashboard API**: http://localhost:5002
+- **Statistics API**: http://localhost:5003
 - **MongoDB**: localhost:27017
 - **Redis**: localhost:6379
 

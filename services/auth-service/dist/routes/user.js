@@ -14,16 +14,13 @@ const loginLimiter = rateLimit({
 });
 router.get("/refresh", refreshAccessToken);
 // router.get("/verify/:token", verifyActivationToken);
-router.post("/login", 
-// loginLimiter 
-login);
-router.post("/verify-2fa", verify2fa);
+import { validate, loginSchema, verify2faSchema, forgotPasswordSchema, changePasswordSchema, } from "../middlewares/validation.js";
+// ...
+router.post("/login", validate(loginSchema), login);
+router.post("/verify-2fa", validate(verify2faSchema), verify2fa);
 router.post("/logout", logout);
-router.post("/forgotPassword", 
-// loginLimiter,
-forgotPassword);
-// router.post("/verify-code", verifyResetCode);
-router.patch("/change-password", changePassword);
+router.post("/forgotPassword", validate(forgotPasswordSchema), forgotPassword);
+router.patch("/change-password", validate(changePasswordSchema), changePassword);
 router.get("/me", protect, getMe);
 router.get("/last-login", protect, getLastLogin);
 export default router;

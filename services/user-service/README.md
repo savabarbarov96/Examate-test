@@ -18,7 +18,7 @@ User and role management microservice for Examate platform.
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - MongoDB instance
 
 ## Setup
@@ -52,7 +52,7 @@ npm start
 |----------|-------------|---------|
 | `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/examate` |
 | `PORT` | Server port | `5001` |
-| `CLIENT_ORIGIN` | Frontend URL for CORS | `http://localhost:8080` |
+| `CLIENT_ORIGIN` | Frontend URL for CORS | `http://localhost:3000` (dev) / `http://localhost:8080` (prod) |
 | `JWT_SECRET` | Secret for JWT verification (must match auth-service) | (same as auth-service) |
 | `JWT_REFRESH_SECRET` | Refresh token secret (must match auth-service) | (same as auth-service) |
 | `JWT_COOKIE_EXPIRES_IN` | Cookie expiry in days | `90` |

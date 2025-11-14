@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, { JwtPayload, SignOptions } from "jsonwebtoken";
 import * as crypto from "crypto";
+import type { StringValue } from "ms";
 import { UAParser } from "ua-parser-js";
 
 import User, { IUser } from "../models/User.js";
@@ -13,18 +14,32 @@ import { geoReader } from "../utils/geo.js";
 import { recordLoginAttempt } from "../utils/logger.js";
 
 const isProduction = process.env.NODE_ENV === "production";
+const cookieDomain = isProduction ? ".examate.net" : undefined;
+const ACCESS_TOKEN_EXPIRATION_MINUTES = Math.max(
+  5,
+  parseInt(process.env.ACCESS_TOKEN_EXPIRES_IN_MINUTES || "60", 10)
+);
+const ACCESS_TOKEN_EXPIRATION: StringValue = `${ACCESS_TOKEN_EXPIRATION_MINUTES}m`;
+const ACCESS_TOKEN_COOKIE_MAX_AGE = ACCESS_TOKEN_EXPIRATION_MINUTES * 60 * 1000;
+
+const getJwtSecret = (): string => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET is not configured in the environment.");
+  }
+  return secret;
+};
 
 const signToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "15m",
-    // process.env.JWT_EXPIRES_IN,
-  });
+  const options: SignOptions = {
+    expiresIn: ACCESS_TOKEN_EXPIRATION,
+  };
+  return jwt.sign({ id }, getJwtSecret(), options);
 };
 
 const sign2FAToken = (userId: string) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: "5m",
-  });
+  const options: SignOptions = { expiresIn: "5m" };
+  return jwt.sign({ userId }, getJwtSecret(), options);
 };
 
 export const promisifyJWTVerification = (
@@ -54,8 +69,8 @@ const createAndSendTokens = (user: HydratedDocument<IUser>, res: Response) => {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
-    maxAge: 15 * 60 * 1000,
-    domain: ".examate.net",
+    maxAge: ACCESS_TOKEN_COOKIE_MAX_AGE,
+    domain: cookieDomain,
   });
 
   res.cookie("refreshToken", refreshToken, {
@@ -63,16 +78,27 @@ const createAndSendTokens = (user: HydratedDocument<IUser>, res: Response) => {
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
     maxAge: 8 * 24 * 60 * 60 * 1000,
-    domain: ".examate.net",
+    domain: cookieDomain,
   });
 
-  user.password = undefined!;
+  user.password = undefined;
   res.status(200).json({
     status: "success",
     user,
   });
 };
 
+import {
+  ApiError,
+  BadRequestError,
+  ForbiddenError,
+  InternalServerError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../utils/ApiError.js";
+
+import logger from "../utils/logger.js";
+// ...
 export const login = async (
   req: Request,
   res: Response,
@@ -92,7 +118,7 @@ export const login = async (
       geoData = geoReader.city(ipString);
     } catch (err: any) {
       if (err.name === "AddressNotFoundError") {
-        console.warn(`Geo lookup failed for IP: ${ip}`);
+        logger.warn(`Geo lookup failed for IP: ${ip}`);
       }
     }
 
@@ -107,9 +133,7 @@ export const login = async (
         message: "Missing username or password",
       });
 
-      return res
-        .status(400)
-        .json({ message: "Please provide username and password!" });
+      return next(new BadRequestError("Please provide username and password!"));
     }
 
     const user = await User.findOne({ username }).select(
@@ -124,7 +148,7 @@ export const login = async (
         status: "failed",
         message: "Invalid username",
       });
-      return res.status(401).json({ message: "Invalid credentials" });
+      return next(new UnauthorizedError("Invalid credentials"));
     }
 
     const now = new Date();
@@ -135,7 +159,7 @@ export const login = async (
       user.failedLoginAttempts = 0;
       await user.save({ validateBeforeSave: false });
 
-      console.log(
+      logger.info(
         `User ${user.username} unlocked automatically after lock expired.`
       );
     }
@@ -150,11 +174,11 @@ export const login = async (
         message: "Account is locked",
       });
 
-      return res.status(403).json({
-        status: "locked",
-        message:
-          "Your account access has been restricted. Please contact your organization’s admin.",
-      });
+      return next(
+        new ForbiddenError(
+          "Your account access has been restricted. Please contact your organization’s admin."
+        )
+      );
     }
 
     const isPasswordValid =
@@ -187,11 +211,11 @@ export const login = async (
           message: "Account locked due to too many failed login attempts",
         });
 
-        return res.status(403).json({
-          status: "locked",
-          message:
-            "Your account access has been restricted. Please contact your organization’s admin.",
-        });
+        return next(
+          new ForbiddenError(
+            "Your account access has been restricted. Please contact your organization’s admin."
+          )
+        );
       }
 
       await user.save({ validateBeforeSave: false });
@@ -205,8 +229,7 @@ export const login = async (
         message: "Invalid credentials",
       });
 
-      console.log("Invalid credentials.");
-      return res.status(401).json({ message: "Invalid credentials." });
+      return next(new UnauthorizedError("Invalid credentials."));
     }
 
     if (user.failedLoginAttempts && user.failedLoginAttempts > 0) {
@@ -215,13 +238,6 @@ export const login = async (
       user.lockUntil = undefined;
       user.isLocked = false;
       await user.save({ validateBeforeSave: false });
-    }
-
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      return res
-        .status(500)
-        .json({ message: "JWT secret is not configured in the environment." });
     }
 
     if (user.status === "unverified") {
@@ -234,13 +250,11 @@ export const login = async (
         message: "User account is unverified",
       });
 
-      console.log("Unverified account login attempt");
-
-      return res.status(403).json({
-        status: "unverified",
-        message:
-          "Unverified account. Please complete the verification process or contact your administrator.",
-      });
+      return next(
+        new ForbiddenError(
+          "Unverified account. Please complete the verification process or contact your administrator."
+        )
+      );
     }
 
     await recordLoginAttempt({
@@ -259,7 +273,7 @@ export const login = async (
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
-        domain: ".examate.net",
+        domain: cookieDomain,
       });
 
       createAndSendTokens(user, res);
@@ -298,21 +312,18 @@ export const login = async (
 };
 
 export const verifyJWT = (token: string): string | JwtPayload | null => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    console.error("JWT secret not set");
-    return null;
-  }
-
   try {
+    const secret = getJwtSecret();
     const decoded = jwt.verify(token, secret);
     return decoded;
   } catch (err: any) {
-    console.error("JWT verification failed:", err.message);
+    logger.error(`JWT verification failed: ${err.message}`);
     return null;
   }
 };
 
+import { redis } from "../utils/session.js";
+// ...
 export const protect = async (
   req: Request,
   res: Response,
@@ -320,27 +331,34 @@ export const protect = async (
 ): Promise<any> => {
   try {
     const token = req.cookies.jwt;
+    const sessionId = req.cookies.sessionId;
 
     if (!token) {
-      return res.status(401).json({ message: "Not authenticated" });
+      return next(new UnauthorizedError("Not authenticated"));
     }
 
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    if (sessionId) {
+      const session = await redis.get(`session:${sessionId}`);
+      if (!session) {
+        return next(new UnauthorizedError("Session expired"));
+      }
+    }
+
+    const decoded = jwt.verify(token, getJwtSecret()) as JwtPayload;
 
     const user = await User.findById(decoded.id);
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      return next(new UnauthorizedError("User not found"));
     }
 
-    if (user.changePasswordAfter(decoded.iat)) {
-      return res.status(401).json({ message: "Password recently changed" });
+    if (typeof decoded.iat === "number" && user.changePasswordAfter(decoded.iat)) {
+      return next(new UnauthorizedError("Password recently changed"));
     }
 
-    // @ts-ignore
     req.user = user;
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    return next(new UnauthorizedError("Invalid or expired token"));
   }
 };
 
@@ -366,20 +384,20 @@ export const verify2fa = async (
     }
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Missing or invalid token" });
+      return next(new UnauthorizedError("Missing or invalid token"));
     }
 
     const token = authHeader.split(" ")[1];
 
-    let decoded: any;
+    let decoded: JwtPayload;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+      decoded = jwt.verify(token, getJwtSecret()) as JwtPayload;
     } catch (err) {
-      return res.status(401).json({ message: "Invalid or expired token" });
+      return next(new UnauthorizedError("Invalid or expired token"));
     }
 
     if (!decoded.userId) {
-      return res.status(401).json({ message: "Invalid 2FA session" });
+      return next(new UnauthorizedError("Invalid 2FA session"));
     }
 
     const user = await User.findById(decoded.userId).select(
@@ -387,14 +405,15 @@ export const verify2fa = async (
     );
 
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return next(new BadRequestError("User not found"));
     }
 
     if (user.lockUntil && user.lockUntil > new Date()) {
-      return res.status(403).json({
-        message: "Account locked",
-        lockUntil: user.lockUntil,
-      });
+      return next(
+        new ForbiddenError(
+          `Account locked. Please try again after ${user.lockUntil}`
+        )
+      );
     }
 
     if (
@@ -402,7 +421,7 @@ export const verify2fa = async (
       !user.twoFactorCodeExpires ||
       user.twoFactorCodeExpires < new Date()
     ) {
-      return res.status(400).json({ message: "2FA code expired or not set" });
+      return next(new BadRequestError("2FA code expired or not set"));
     }
 
     const { twoFACode } = req.body;
@@ -438,11 +457,11 @@ export const verify2fa = async (
           message: attemptMessage,
         });
 
-        return res.status(403).json({
-          status: "locked",
-          message:
-            "Your account access has been restricted. Please contact your organization’s admin.",
-        });
+        return next(
+          new ForbiddenError(
+            "Your account access has been restricted. Please contact your organization’s admin."
+          )
+        );
       }
 
       await user.save({ validateBeforeSave: false });
@@ -457,7 +476,7 @@ export const verify2fa = async (
         message: attemptMessage,
       });
 
-      return res.status(401).json({ message: "Invalid 2FA code" });
+      return next(new UnauthorizedError("Invalid 2FA code"));
     }
 
     user.failed2FAAttempts = 0;
@@ -481,7 +500,7 @@ export const verify2fa = async (
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
-      domain: ".examate.net",
+      domain: cookieDomain,
     });
 
     createAndSendTokens(user, res);
@@ -492,72 +511,79 @@ export const verify2fa = async (
 
 export const forgotPassword = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<any> => {
-  const { email } = req.body;
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    return res.status(404).json({
-      message: "There is no user with that email address!",
-    });
-  }
-
-  const verificationCode = Math.floor(
-    100000 + Math.random() * 900000
-  ).toString();
-  const expires = new Date(Date.now() + 10 * 60 * 1000);
-
-  user.verificationCode = verificationCode;
-  user.verificationCodeExpires = expires;
-  await user.save({ validateBeforeSave: false });
-
   try {
-    const message = `Your password reset code is: ${verificationCode}`;
-    await sendEmail({
-      email: user.email,
-      subject: "Your password reset code",
-      message,
-    });
+    const { email } = req.body;
+    const user = await User.findOne({ email });
 
-    return res.status(200).json({
-      message: "A 6-digit code has been sent to your email.",
-    });
-  } catch (err) {
-    user.verificationCode = undefined;
-    user.verificationCodeExpires = undefined;
+    if (!user) {
+      return next(
+        new NotFoundError("There is no user with that email address!")
+      );
+    }
+
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+    const expires = new Date(Date.now() + 10 * 60 * 1000);
+
+    user.verificationCode = verificationCode;
+    user.verificationCodeExpires = expires;
     await user.save({ validateBeforeSave: false });
 
-    console.log({ err });
-    
-    return res.status(500).json({
-      message: "Failed to send verification code. Please try again.",
-    });
+    try {
+      const message = `Your password reset code is: ${verificationCode}`;
+      await sendEmail({
+        email: user.email,
+        subject: "Your password reset code",
+        message,
+      });
+
+      return res.status(200).json({
+        message: "A 6-digit code has been sent to your email.",
+      });
+    } catch (err) {
+      user.verificationCode = undefined;
+      user.verificationCodeExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return next(
+        new InternalServerError("Failed to send verification code. Please try again.")
+      );
+    }
+  } catch (err) {
+    next(err);
   }
 };
 
 export const refreshAccessToken = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<any> => {
-  const token = req.cookies.refreshToken;
-
-  if (!token) {
-    return res.status(401).json({ message: "Refresh token missing" });
-  }
-
   try {
-    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET!) as any;
+    const token = req.cookies.refreshToken;
+
+    if (!token) {
+      return next(new UnauthorizedError("Refresh token missing"));
+    }
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_REFRESH_SECRET!
+    ) as any;
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      return next(new UnauthorizedError("User not found"));
     }
 
     if (user.changePasswordAfter(decoded.iat)) {
-      return res
-        .status(401)
-        .json({ message: "Password recently changed. Please log in again." });
+      return next(
+        new UnauthorizedError("Password recently changed. Please log in again.")
+      );
     }
 
     const newAccessToken = signToken(user._id.toString());
@@ -567,12 +593,12 @@ export const refreshAccessToken = async (
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
       maxAge: 15 * 60 * 1000,
-      domain: ".examate.net",
+      domain: cookieDomain,
     });
 
     res.status(200).json({ message: "Token refreshed" });
   } catch (err) {
-    res.status(403).json({ message: "Invalid or expired refresh token" });
+    next(new UnauthorizedError("Invalid or expired refresh token"));
   }
 };
 
@@ -588,14 +614,14 @@ export const logout = async (req: Request, res: Response) => {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
-    domain: ".examate.net",
+    domain: cookieDomain,
   });
 
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
-    domain: ".examate.net",
+    domain: cookieDomain,
   });
 
   res.status(200).json({ message: "Logged out successfully" });
@@ -659,13 +685,13 @@ export const changePassword = async (
     const { userId, newPassword } = req.body;
 
     if (!userId || !newPassword) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return next(new BadRequestError("Missing required fields"));
     }
 
     const user = await User.findById(userId).select("+password");
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return next(new NotFoundError("User not found"));
     }
 
     user.password = newPassword;
@@ -688,7 +714,7 @@ export const changePassword = async (
       geoData = geoReader.city(ipString);
     } catch (err: any) {
       if (err.name === "AddressNotFoundError") {
-        console.warn(`Geo lookup failed for IP: ${ip}`);
+        logger.warn(`Geo lookup failed for IP: ${ip}`);
       }
     }
 
@@ -696,8 +722,9 @@ export const changePassword = async (
 
     res.cookie("sessionId", session.sessionId, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      domain: cookieDomain,
     });
 
     createAndSendTokens(user, res);
@@ -728,16 +755,16 @@ export const sendActivationOrResetPassLink = async (
   try {
     const { email, purpose = "activation" } = req.body;
     if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+      return next(new BadRequestError("Email is required"));
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return next(new NotFoundError("User not found"));
     }
 
     if (user.status === "verified") {
-      return res.status(400).json({ message: "User already verified" });
+      return next(new BadRequestError("User already verified"));
     }
 
     const token = crypto.randomBytes(32).toString("hex");
@@ -749,7 +776,7 @@ export const sendActivationOrResetPassLink = async (
     await user.save({ validateBeforeSave: false });
 
     const link = `${
-      process.env.CLIENT_ORIGIN || "http://localhost:8080"
+      process.env.CLIENT_ORIGIN || "http://localhost:3000"
     }${purpose === " activation" ? "/activate" : "change-password"}/${token}`;
 
     await sendEmail({
@@ -779,11 +806,11 @@ export const sendActivationOrResetPassLink = async (
 
 export const getLastLogin = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<any> => {
   try {
-    // @ts-ignore
-    const userId = req.user._id.toString();
+    const userId = req.user?._id.toString();
 
     // Query the two most recent successful logins so we can skip the current session
     const recentAttempts = await LoginAttempt.find({
@@ -804,7 +831,6 @@ export const getLastLogin = async (
       lastLogin: lastRelevantAttempt.timestamp.toISOString(),
     });
   } catch (error) {
-    console.error("Error in getLastLogin:", error);
-    res.status(500).json({ message: "Failed to fetch last login" });
+    next(new InternalServerError("Failed to fetch last login"));
   }
 };

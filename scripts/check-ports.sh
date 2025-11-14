@@ -10,8 +10,8 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-ports=(5000 5001 6379 8080 27017)
-port_names=("Auth Service" "User Service" "Redis" "Frontend" "MongoDB")
+ports=(5000 5001 5002 5003 6379 3000 27017)
+port_names=("Auth Service" "User Service" "Dashboard Service" "Statistics Service" "Redis" "Frontend (dev)" "MongoDB")
 all_free=true
 
 for i in "${!ports[@]}"; do

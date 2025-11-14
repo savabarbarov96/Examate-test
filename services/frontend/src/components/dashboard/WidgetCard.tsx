@@ -15,7 +15,7 @@ import {
 import type { DashboardWidget, WidgetData } from "@/utils/dashboard/types";
 import { HorizontalBarChart, PieChart } from "@/components/dashboard/charts";
 import { getStubDataForWidget } from "@/utils/dashboard/stubData";
-import { getWidgetData } from "@/utils/dashboard/api";
+import { getStatisticsWidgetData } from "@/utils/statistics/api";
 
 interface WidgetCardProps {
   widget: DashboardWidget;
@@ -57,7 +57,7 @@ export default function WidgetCard({
     let isMounted = true;
     setDataLoading(true);
 
-    getWidgetData(widget.id)
+    getStatisticsWidgetData(widget.type)
       .then((data) => {
         if (isMounted) {
           setChartData(data);

@@ -40,7 +40,7 @@ fi
 echo ""
 echo -e "${YELLOW}📝 Setting up service .env files...${NC}"
 
-services=("auth-service" "user-service" "frontend")
+services=("auth-service" "user-service" "dashboard-service" "statistics-service" "frontend")
 for service in "${services[@]}"; do
     service_path="services/$service"
     if [ -f "$service_path/.env.example" ] && [ ! -f "$service_path/.env" ]; then
@@ -73,7 +73,10 @@ echo "3. Check logs:"
 echo "   docker-compose logs -f"
 echo ""
 echo "4. Access the application:"
-echo "   Frontend: http://localhost:8080"
+echo "   Frontend (dev): http://localhost:3000"
+echo "   Frontend (prod): http://localhost:8080"
 echo "   Auth API: http://localhost:5000"
 echo "   User API: http://localhost:5001"
+echo "   Dashboard API: http://localhost:5002"
+echo "   Statistics API: http://localhost:5003"
 echo ""
