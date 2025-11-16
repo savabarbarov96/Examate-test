@@ -29,6 +29,7 @@ COPY --from=dependencies /app/node_modules ./node_modules
 # Copy source files
 COPY package.json package-lock.json tsconfig.json ./
 COPY src ./src
+COPY databases ./databases
 
 # Build TypeScript
 RUN npm run build
@@ -50,6 +51,7 @@ COPY --from=dependencies /prod_node_modules ./node_modules
 
 # Copy built application
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/databases ./databases
 COPY --from=builder /app/package.json ./
 
 # Change ownership to non-root user
