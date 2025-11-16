@@ -3,7 +3,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { Reader } from "@maxmind/geoip2-node";
 import axios from "axios";
-import { redisClient } from "../databases/redisClient.js";
+import { redis } from "./session.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,7 +31,7 @@ if (GEO_PROVIDER === "maxmind") {
       console.warn("  This is non-critical - the app will continue normally.");
     }
   } catch (error) {
-    console.warn("⚠ Failed to load MaxMind database:", error.message);
+    console.warn("⚠ Failed to load MaxMind database:", error instanceof Error ? error.message : String(error));
     console.warn("  Geo lookups will return 'Unknown'.");
   }
 }
@@ -58,7 +58,7 @@ async function lookupViaIPAPI(ip: string): Promise<GeoLocation> {
       city: response.data.city || "Unknown",
     };
   } catch (error) {
-    console.warn(`ipapi.co lookup failed for ${ip}:`, error.message);
+    console.warn(`ipapi.co lookup failed for ${ip}:`, error instanceof Error ? error.message : String(error));
     return { country: "Unknown", city: "Unknown" };
   }
 }
@@ -72,7 +72,7 @@ function lookupViaMaxMind(ip: string): GeoLocation {
   }
 
   try {
-    const result = maxmindReader.city(ip);
+    const result = (maxmindReader as any).city(ip);
     return {
       country: result.country?.names?.en || "Unknown",
       city: result.city?.names?.en || "Unknown",
@@ -88,13 +88,13 @@ function lookupViaMaxMind(ip: string): GeoLocation {
  */
 async function getCachedGeo(ip: string): Promise<GeoLocation | null> {
   try {
-    const cached = await redisClient.get(`geo:${ip}`);
+    const cached = await redis.get(`geo:${ip}`);
     if (cached) {
       return JSON.parse(cached);
     }
   } catch (error) {
     // Redis error - continue without cache
-    console.warn("Redis cache read failed:", error.message);
+    console.warn("Redis cache read failed:", error instanceof Error ? error.message : String(error));
   }
   return null;
 }
@@ -104,10 +104,10 @@ async function getCachedGeo(ip: string): Promise<GeoLocation | null> {
  */
 async function cacheGeo(ip: string, geo: GeoLocation): Promise<void> {
   try {
-    await redisClient.setex(`geo:${ip}`, GEO_CACHE_TTL, JSON.stringify(geo));
+    await redis.setex(`geo:${ip}`, GEO_CACHE_TTL, JSON.stringify(geo));
   } catch (error) {
     // Redis error - continue without cache
-    console.warn("Redis cache write failed:", error.message);
+    console.warn("Redis cache write failed:", error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -178,7 +178,7 @@ export const geoReader = {
     // Synchronous wrapper - returns a MaxMind-like response
     if (maxmindReader) {
       try {
-        return maxmindReader.city(ip);
+        return (maxmindReader as any).city(ip);
       } catch (error) {
         // Return a minimal response for compatibility
         return {
