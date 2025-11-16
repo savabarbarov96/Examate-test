@@ -1,9 +1,39 @@
+# =============================================================================
+# Examate - Docker Compose Configuration
+# Production-ready microservices orchestration with profiles
+# =============================================================================
+
 version: '3.8'
 
+# YAML Anchors for shared configuration (DRY principle)
+x-common-variables: &common-env
+  NODE_ENV: production
+  JWT_SECRET: ${JWT_SECRET}
+  JWT_COOKIE_EXPIRES_IN: 90
+
+x-mongo-connection: &mongo-uri
+  MONGO_URI: mongodb://root:examate_mongo_pass@mongodb:27017/examate?authSource=admin
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 40s
+
 services:
+  # ===========================================================================
+  # Infrastructure Services
+  # ===========================================================================
+
   mongodb:
     image: mongo:7
-    container_name: examate-mongodb
+    profiles: ["prod", "dev", "db"]
     restart: unless-stopped
     ports:
       - "27017:27017"
@@ -11,52 +41,62 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: examate_mongo_pass
       MONGO_INITDB_DATABASE: examate
+    # Quieter MongoDB logging
+    command: >
+      mongod
+      --quiet
+      --logpath /dev/null
+      --auth
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
     networks:
       - examate-network
+    logging: *default-logging
     healthcheck:
+      <<: *healthcheck-defaults
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      start_period: 20s
 
   redis:
     image: redis:7-alpine
-    container_name: examate-redis
+    profiles: ["prod", "dev", "db"]
     restart: unless-stopped
     ports:
       - "6379:6379"
+    command: redis-server --appendonly yes --loglevel warning
     volumes:
       - redis_data:/data
     networks:
       - examate-network
+    logging: *default-logging
     healthcheck:
+      <<: *healthcheck-defaults
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      start_period: 10s
+
+  # ===========================================================================
+  # Backend Microservices
+  # ===========================================================================
 
   auth-service:
     build:
       context: ./services/auth-service
       dockerfile: Dockerfile
-    container_name: examate-auth-service
+    profiles: ["prod", "dev"]
     restart: unless-stopped
     ports:
       - "5000:5000"
     environment:
-      - NODE_ENV=production
-      - PORT=5000
-      - MONGO_URI=mongodb://root:examate_mongo_pass@mongodb:27017/examate?authSource=admin
-      - REDIS_URL=redis://redis:6379
-      - CLIENT_ORIGIN=http://localhost:8080
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - JWT_COOKIE_EXPIRES_IN=90
-      - EMAIL_USERNAME=${EMAIL_USERNAME}
-      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      <<: *common-env
+      PORT: 5000
+      <<: *mongo-uri
+      REDIS_URL: redis://redis:6379
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      EMAIL_USERNAME: ${EMAIL_USERNAME}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -64,66 +104,45 @@ services:
         condition: service_healthy
     networks:
       - examate-network
+    logging: *default-logging
 
   user-service:
     build:
       context: ./services/user-service
       dockerfile: Dockerfile
-    container_name: examate-user-service
+    profiles: ["prod", "dev"]
     restart: unless-stopped
     ports:
       - "5001:5001"
     environment:
-      - NODE_ENV=production
-      - PORT=5001
-      - MONGO_URI=mongodb://root:examate_mongo_pass@mongodb:27017/examate?authSource=admin
-      - CLIENT_ORIGIN=http://localhost:8080
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - JWT_COOKIE_EXPIRES_IN=90
-      - EMAIL_USERNAME=${EMAIL_USERNAME}
-      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      <<: *common-env
+      PORT: 5001
+      <<: *mongo-uri
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      EMAIL_USERNAME: ${EMAIL_USERNAME}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
     depends_on:
       mongodb:
         condition: service_healthy
     networks:
       - examate-network
-
-  statistics-service:
-    build:
-      context: ./services/statistics-service
-      dockerfile: Dockerfile
-    container_name: examate-statistics-service
-    restart: unless-stopped
-    ports:
-      - "5003:5003"
-    environment:
-      - NODE_ENV=production
-      - PORT=5003
-      - MONGO_URI=mongodb://root:examate_mongo_pass@mongodb:27017/examate?authSource=admin
-      - CLIENT_ORIGIN=http://localhost:8080
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    networks:
-      - examate-network
+    logging: *default-logging
 
   dashboard-service:
     build:
       context: ./services/dashboard-service
       dockerfile: Dockerfile
-    container_name: examate-dashboard-service
+    profiles: ["prod", "dev"]
     restart: unless-stopped
     ports:
       - "5002:5002"
     environment:
-      - NODE_ENV=production
-      - PORT=5002
-      - MONGO_URI=mongodb://root:examate_mongo_pass@mongodb:27017/examate?authSource=admin
-      - CLIENT_ORIGIN=http://localhost:8080
-      - JWT_SECRET=${JWT_SECRET}
-      - STATISTICS_SERVICE_URL=${STATISTICS_SERVICE_URL:-http://statistics-service:5003}
+      <<: *common-env
+      PORT: 5002
+      <<: *mongo-uri
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
+      STATISTICS_SERVICE_URL: http://statistics-service:5003
     depends_on:
       mongodb:
         condition: service_healthy
@@ -131,6 +150,31 @@ services:
         condition: service_started
     networks:
       - examate-network
+    logging: *default-logging
+
+  statistics-service:
+    build:
+      context: ./services/statistics-service
+      dockerfile: Dockerfile
+    profiles: ["prod", "dev"]
+    restart: unless-stopped
+    ports:
+      - "5003:5003"
+    environment:
+      <<: *common-env
+      PORT: 5003
+      <<: *mongo-uri
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - examate-network
+    logging: *default-logging
+
+  # ===========================================================================
+  # Frontend
+  # ===========================================================================
 
   frontend:
     build:
@@ -141,7 +185,7 @@ services:
         VITE_AUTH_API_URL: ${VITE_AUTH_API_URL:-http://localhost:5000}
         VITE_DASHBOARD_API_URL: ${VITE_DASHBOARD_API_URL:-http://localhost:5002}
         VITE_STATISTICS_API_URL: ${VITE_STATISTICS_API_URL:-http://localhost:5003}
-    container_name: examate-frontend
+    profiles: ["prod"]
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-8080}:80"
@@ -152,15 +196,28 @@ services:
       - statistics-service
     networks:
       - examate-network
+    logging: *default-logging
+
+# =============================================================================
+# Volumes
+# =============================================================================
 
 volumes:
   mongodb_data:
+    name: examate_mongodb_data
     driver: local
   mongodb_config:
+    name: examate_mongodb_config
     driver: local
   redis_data:
+    name: examate_redis_data
     driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
 
 networks:
   examate-network:
+    name: examate_network
     driver: bridge

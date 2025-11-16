@@ -1,368 +1,287 @@
 # Examate
 
-A microservices-based exam management platform built with TypeScript, Node.js, React, and MongoDB.
+A microservices-based examination management platform built with TypeScript, Node.js, React, and MongoDB.
+
+## Features
+
+- **Authentication**: JWT-based auth with 2FA, session management, password reset
+- **User Management**: RBAC with granular permissions
+- **Dashboard**: Customizable widgets and layouts
+- **Statistics**: Real-time analytics and chart data
+- **Microservices**: Scalable service-oriented architecture
+- **Cross-Platform**: Works on Windows, Linux, and macOS
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Frontend (React)                      │
-│          http://localhost:8080 (prod) / 3000 (dev)           │
-└──────────────┬─────────────────────────┬────────────────────┘
-               │                         │
-               ▼                         ▼
-┌──────────────────────────┐  ┌──────────────────────────┐
-│    Auth Service          │  │    User Service          │
-│  http://localhost:5000   │  │  http://localhost:5001   │
-│                          │  │                          │
-│  - Authentication        │  │  - User CRUD             │
-│  - JWT tokens            │  │  - Role Management       │
-│  - 2FA                   │  │  - RBAC                  │
-│  - Session Management    │  │                          │
-└────────┬────────┬────────┘  └────────┬─────────────────┘
-         │        │                    │
-         ▼        ▼                    ▼
-    ┌────────┐ ┌──────┐         ┌────────┐
-    │MongoDB │ │Redis │         │MongoDB │
-    │ :27017 │ │:6379 │         │ :27017 │
-    └────────┘ └──────┘         └────────┘
-```
+See [SERVICE_ARCHITECTURE.md](./SERVICE_ARCHITECTURE.md) for detailed architecture documentation.
 
-## Services
+**Quick Overview**:
 
-- **Auth Service** (Port 5000): Authentication, authorization, session management, 2FA
-- **User Service** (Port 5001): User CRUD, role management, RBAC
-- **Dashboard Service** (Port 5002): Dashboard widgets, layout management, proxy to statistics service
-- **Statistics Service** (Port 5003): Aggregated widgets, analytics catalog, chart data APIs
-- **Frontend** (Ports 8080 prod / 3000 dev): React SPA with Vite, TypeScript, Tailwind CSS
+```
+Frontend (React) :3000/:8080
+    ↓       ↓       ↓       ↓
+  Auth    User  Dashboard Stats
+  :5000   :5001  :5002    :5003
+    ↓       ↓       ↓       ↓
+  MongoDB :27017 + Redis :6379
+```
 
 ## Tech Stack
 
-- **Backend**: Node.js, Express v5, TypeScript
-- **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui
-- **Database**: MongoDB
-- **Cache**: Redis
-- **Container**: Docker & Docker Compose
+- **Backend**: Node.js 20, Express 5, TypeScript 5
+- **Frontend**: React 19, Vite 6, TypeScript, Tailwind CSS 4
+- **Database**: MongoDB 7, Redis 7
+- **DevOps**: Docker, Docker Compose, Node.js CLI
+- **Shared**: npm workspaces, @examate/shared package
 
 ## Prerequisites
 
-- Docker 20.10+
-- Docker Compose 2.0+
-- Node.js 20+ (for local development without Docker)
+- **Docker** 20.10+ and **Docker Compose** 2.0+
+- **Node.js** 20+ (for local development)
+- **openssl** (for generating secrets)
 
-## Quick Start (Docker - Recommended)
+## Quick Start
 
-### 1. Clone & Setup
+### 1. Clone and Setup
 
 ```bash
 git clone <repository-url>
 cd examate
 
-# Run setup script
-./scripts/setup.sh
-
-# Or manually:
-cp .env.example .env
-# Edit .env with your secrets
+# Run cross-platform setup
+npm run setup
 ```
 
-### 2. Configure Environment
+The setup command will:
+- Check Docker and Docker Compose installation
+- Create .env files from templates
+- Guide you through configuration
 
-Edit the root `.env` file and add your secrets:
+### 2. Configure Secrets
+
+Generate strong secrets:
 
 ```bash
-# Generate secure JWT secrets
-openssl rand -base64 64
+openssl rand -base64 64  # For JWT_SECRET
+openssl rand -base64 64  # For JWT_REFRESH_SECRET
+```
 
-# Add to .env
+Edit `.env` and add your secrets:
+
+```env
 JWT_SECRET=<your-generated-secret>
 JWT_REFRESH_SECRET=<your-generated-secret>
 EMAIL_USERNAME=your-email@example.com
 EMAIL_PASSWORD=your-email-password
 ```
 
-### 3. Start All Services
+See [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md) for complete configuration guide.
 
-**Production Mode:**
+### 3. Start Development Environment
+
+**Recommended (cross-platform)**:
+
 ```bash
-docker-compose up -d
+npm run dev:docker
 ```
 
-**Development Mode (with hot reload):**
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
-```
-If port `3000` is in use locally, export `FRONTEND_DEV_PORT=<free-port>` before running the command to remap the Vite dev server (defaults to `3000`).
+**Alternative methods**:
 
-**Using Makefile (recommended):**
 ```bash
-make dev      # Start in development mode
-make up       # Start in production mode (background)
-make logs     # View logs
-make down     # Stop all services
+# Using make (Linux/Mac)
+make dev
+
+# Using Docker Compose directly
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --profile dev
 ```
+
+This starts all services with:
+- **Hot reload** for code changes
+- **Source maps** for debugging
+- **Development logging**
+- **Volume mounts** (no rebuilds needed)
 
 ### 4. Access the Application
 
-- **Frontend (dev)**: http://localhost:3000
-- **Frontend (prod)**: http://localhost:8080
-- **Auth API**: http://localhost:5000
-- **User API**: http://localhost:5001
-- **Dashboard API**: http://localhost:5002
-- **Statistics API**: http://localhost:5003
-- **MongoDB**: localhost:27017
-- **Redis**: localhost:6379
+| Service | URL | Purpose |
+|---------|-----|---------|
+| **Frontend (dev)** | http://localhost:3000 | React app with HMR |
+| **Frontend (prod)** | http://localhost:8080 | Production build |
+| **Auth API** | http://localhost:5000 | Authentication |
+| **User API** | http://localhost:5001 | User management |
+| **Dashboard API** | http://localhost:5002 | Dashboards |
+| **Statistics API** | http://localhost:5003 | Analytics |
+| **MongoDB** | localhost:27017 | Database |
+| **Redis** | localhost:6379 | Cache/sessions |
 
-## Makefile Commands
+## Available Commands
+
+### NPM Commands (Cross-Platform)
+
+These work on **Windows, Linux, and macOS**:
 
 ```bash
-make help           # Show all available commands
-make setup          # Run initial setup
-make check-ports    # Check if required ports are free
-make dev            # Start in development mode (hot reload)
-make up             # Start in production mode (detached)
-make down           # Stop all services
-make logs           # View logs from all services
+npm run setup         # Initial setup (checks Docker, creates .env)
+npm run check-ports   # Verify ports 5000-5003, 3000, 6379, 27017 are free
+npm run dev:docker    # Start development environment (hot reload)
+npm run build         # Build all Docker images
+npm run up            # Start production environment (detached)
+npm run down          # Stop all services
+npm run restart       # Restart all services
+npm run logs          # View logs from all services
+npm run ps            # Show running containers
+npm run clean         # Stop and remove volumes (WARNING: deletes data)
+npm run help          # Show all available commands
+```
+
+### Make Commands (Linux/Mac)
+
+```bash
+make help           # Show all commands
+make setup          # Initial setup
+make check-ports    # Check port availability
+make dev            # Start development
+make up             # Start production (detached)
+make down           # Stop services
+make logs           # View logs
 make logs-auth      # View auth service logs
 make logs-user      # View user service logs
-make logs-frontend  # View frontend logs
-make restart        # Restart all services
-make clean          # Stop services and remove volumes
-make ps             # Show running containers
+make restart        # Restart services
+make clean          # Remove volumes
+make ps             # Show containers
 ```
 
-## Manual Docker Compose Commands
+### Docker Compose Profiles
+
+The stack uses profiles to control which services run:
 
 ```bash
-# Build images
-docker-compose build
+# Development (all services + dev config)
+docker compose --profile dev up
 
-# Start services (detached)
-docker-compose up -d
+# Production (all services, prod builds)
+docker compose --profile prod up
 
-# Start services (foreground with logs)
-docker-compose up
-
-# Start in development mode
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
-
-# Stop services
-docker-compose down
-
-# View logs
-docker-compose logs -f
-
-# View logs for specific service
-docker-compose logs -f auth-service
-
-# Restart specific service
-docker-compose restart auth-service
-
-# Rebuild and restart specific service
-docker-compose build auth-service
-docker-compose up -d auth-service
-
-# Stop and remove volumes
-docker-compose down -v
+# Database only
+docker compose --profile db up
 ```
-
-## Local Development (Without Docker)
-
-If you prefer running services natively:
-
-### Prerequisites
-- MongoDB running on localhost:27017
-- Redis running on localhost:6379
-
-### Setup
-
-```bash
-# Auth Service
-cd services/auth-service
-cp .env.example .env
-npm install
-npm run dev
-
-# User Service
-cd services/user-service
-cp .env.example .env
-npm install
-npm run dev
-
-# Frontend
-cd services/frontend
-cp .env.example .env
-npm install
-npm run dev
-```
-
-## Environment Variables
-
-### Root `.env`
-- `JWT_SECRET` - Secret for access tokens (required)
-- `JWT_REFRESH_SECRET` - Secret for refresh tokens (required)
-- `EMAIL_USERNAME` - SMTP email username
-- `EMAIL_PASSWORD` - SMTP email password
-
-### Service-Specific
-Each service has its own `.env` file. See individual service READMEs:
-- [Auth Service](./services/auth-service/README.md)
-- [User Service](./services/user-service/README.md)
-- [Frontend](./services/frontend/README.md)
 
 ## Project Structure
 
 ```
 examate/
-├── docker-compose.yml          # Production Docker Compose
-├── docker-compose.dev.yml      # Development overrides
-├── Makefile                    # Convenient commands
-├── .env                        # Root environment variables
+├── package.json                  # Root workspace & CLI scripts
+├── docker-compose.yml            # Base compose config (profiles, anchors)
+├── docker-compose.dev.yml        # Development overrides (hot reload)
+├── Makefile                      # Make shortcuts (Linux/Mac)
+├── .env                          # Root environment variables
+├── .env.example                  # Environment template
+├── .gitignore                    # Git ignore rules
+├── ENVIRONMENT_VARIABLES.md      # Complete env var guide
+├── SERVICE_ARCHITECTURE.md       # Architecture documentation
+│
+├── tools/
+│   └── dev-cli.js                # Cross-platform Node.js CLI
+│
 ├── scripts/
-│   ├── setup.sh                # Initial setup script
-│   └── check-ports.sh          # Port availability checker
+│   ├── setup.sh                  # Legacy setup (Linux/Mac)
+│   └── check-ports.sh            # Legacy port checker (Linux/Mac)
+│
+├── packages/
+│   └── shared/                   # Shared types & utilities
+│       ├── src/
+│       │   ├── types/            # TypeScript interfaces & DTOs
+│       │   ├── utils/            # Helper functions
+│       │   └── index.ts
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── README.md
+│
 └── services/
-    ├── auth-service/           # Authentication microservice
-    │   ├── controllers/
+    ├── auth-service/             # Port 5000
+    │   ├── src/
     │   ├── models/
     │   ├── routes/
-    │   ├── utils/
-    │   ├── Dockerfile          # Production
-    │   ├── Dockerfile.dev      # Development
-    │   └── README.md
-    ├── user-service/           # User management microservice
     │   ├── controllers/
-    │   ├── models/
-    │   ├── routes/
+    │   ├── middleware/
     │   ├── utils/
-    │   ├── Dockerfile
-    │   ├── Dockerfile.dev
-    │   └── README.md
-    └── frontend/               # React frontend
+    │   ├── Dockerfile            # Multi-stage, npm ci, non-root
+    │   ├── Dockerfile.dev        # Development (volume mounts)
+    │   ├── package.json
+    │   ├── tsconfig.json
+    │   └── .env
+    ├── user-service/             # Port 5001
+    ├── dashboard-service/        # Port 5002
+    ├── statistics-service/       # Port 5003
+    └── frontend/                 # Port 3000 (dev) / 8080 (prod)
         ├── src/
-        ├── Dockerfile
-        ├── Dockerfile.dev
-        └── README.md
+        ├── public/
+        ├── Dockerfile            # Vite build + Nginx
+        ├── Dockerfile.dev        # Vite dev server with HMR
+        ├── nginx.conf
+        ├── package.json
+        └── .env
 ```
 
-## Features
+## Shared Types (@examate/shared)
 
-### Authentication
-- JWT-based authentication with dual-token system
-- Access tokens (15 min) + Refresh tokens (8 hours)
-- Automatic token refresh
-- HTTP-only cookies for security
-- 2FA support (email-based)
-- Password reset flow
+The project uses an npm workspace with a shared types package to avoid code duplication:
 
-### Session Management
-- Redis-backed sessions
-- Real-time session tracking via Socket.IO
-- Device fingerprinting
-- GeoIP location tracking
-- Session termination
+```typescript
+// In any service
+import {
+  User,
+  CreateUserDTO,
+  ApiResponse,
+  createSuccessResponse,
+  HttpStatus,
+} from '@examate/shared';
 
-### User Management
-- User CRUD operations
-- Role-based access control (RBAC)
-- Granular permissions system
-- Three default roles: Sys Admin, Client Admin, Proctor
-- Role seeding on startup
+// Create standardized responses
+return createSuccessResponse<User>(user, 'User created successfully');
+```
 
-### Security
-- Login attempt tracking
-- Account locking after failed attempts
-- Rate limiting (configurable)
-- Password lifecycle tracking
-- CORS configuration
-- Environment-based secrets
+See [packages/shared/README.md](./packages/shared/README.md) for details.
 
-## Troubleshooting
+## Development Workflow
 
-### Port Conflicts
+### Hot Reload (Recommended)
 
-Check if required ports are available:
 ```bash
-./scripts/check-ports.sh
-# Or
-make check-ports
+npm run dev:docker
 ```
 
-### Redis Connection Issues
+Changes to source code automatically reload services. No rebuilds needed.
 
-If you see `ETIMEDOUT` errors:
-1. Ensure Redis container is running: `docker ps | grep redis`
-2. Check logs: `docker logs examate-redis`
-3. Verify network: `docker network inspect examate_examate-network`
+### Rebuild After Dependency Changes
 
-### MongoDB Connection Issues
-
-Check MongoDB logs:
 ```bash
-docker logs examate-mongodb
+# If you change package.json
+npm run down
+npm run build
+npm run dev:docker
 ```
 
-### Service Won't Start
+### View Logs
 
-View service logs:
 ```bash
 # All services
-make logs
+npm run logs
 
 # Specific service
-docker-compose logs -f auth-service
+docker compose logs -f auth-service
+docker compose logs -f frontend
 ```
 
-### Hot Reload Not Working (Development Mode)
+### Run Commands in Container
 
-This is a known issue with Docker + WSL2 + Windows. Solutions:
-1. Use native Node.js development (see "Local Development" section)
-2. Enable WSL2 file watching: Add `CHOKIDAR_USEPOLLING=true` to service environment
-
-### Clean Slate
-
-Remove all containers, volumes, and start fresh:
 ```bash
-make clean
-docker-compose build --no-cache
-make dev
+# Example: Run migrations
+docker compose exec auth-service npm run migrate
+
+# Example: Seed database
+docker compose exec user-service npm run seed
 ```
-
-## API Documentation
-
-### Auth Service (Port 5000)
-
-**Authentication:**
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `GET /api/auth/refresh` - Refresh access token
-- `GET /api/auth/me` - Get current user
-- `POST /api/auth/verify-2fa` - Verify 2FA code
-
-**Password Management:**
-- `POST /api/auth/forgotPassword` - Request password reset
-- `POST /api/auth/verify-code` - Verify reset code
-- `PATCH /api/auth/change-password` - Change password
-
-**Sessions:**
-- `GET /api/session/count` - Get active session count
-- `GET /api/session/:userId` - Get user sessions
-
-### User Service (Port 5001)
-
-**Users:**
-- `GET /api/users` - List all users
-- `GET /api/users/:id` - Get user by ID
-- `POST /api/users` - Create user
-- `PATCH /api/users/:id` - Update user
-- `DELETE /api/users/:id` - Delete user
-
-**Roles:**
-- `GET /api/roles` - List all roles
-- `GET /api/roles/:id` - Get role by ID
-- `POST /api/roles` - Create role
-- `PATCH /api/roles/:id` - Update role
-- `DELETE /api/roles/:id` - Delete role
 
 ## Testing
 
@@ -371,49 +290,279 @@ make dev
 ```bash
 cd services/frontend
 
-# Run tests (headless)
+# Run Playwright tests
 npm run test
 
-# Run tests (UI mode)
+# UI mode
 npm run test:ui
+```
+
+### Backend Tests
+
+Each service has its own test suite:
+
+```bash
+cd services/auth-service
+npm test
+```
+
+## Troubleshooting
+
+### Port Conflicts
+
+Check if required ports are available:
+
+```bash
+npm run check-ports
+```
+
+Ports needed:
+- 5000-5003 (backend services)
+- 3000 (frontend dev)
+- 8080 (frontend prod)
+- 27017 (MongoDB)
+- 6379 (Redis)
+
+### Services Won't Start
+
+```bash
+# Check logs
+npm run logs
+
+# Or specific service
+docker compose logs -f auth-service
+
+# Check Docker status
+docker compose ps
+```
+
+### MongoDB Connection Issues
+
+```bash
+# Check MongoDB logs
+docker compose logs mongodb
+
+# Verify MongoDB is healthy
+docker compose ps | grep mongodb
+
+# Test connection
+docker compose exec mongodb mongosh -u root -p examate_mongo_pass
+```
+
+### Redis Connection Issues
+
+```bash
+# Check Redis logs
+docker compose logs redis
+
+# Test connection
+docker compose exec redis redis-cli ping
+```
+
+### Hot Reload Not Working
+
+**Windows + Docker Desktop + WSL2**:
+
+1. Enable WSL2 file watching:
+   ```bash
+   # Add to docker-compose.dev.yml for each service
+   environment:
+     - CHOKIDAR_USEPOLLING=true
+   ```
+
+2. Or run services natively (see "Local Development" below)
+
+### Clean Slate
+
+Remove everything and start fresh:
+
+```bash
+npm run clean              # Stop and remove volumes
+npm run build              # Rebuild images
+npm run dev:docker         # Start dev environment
+```
+
+### Windows-Specific Issues
+
+If you encounter path or permission issues on Windows:
+
+1. **Use WSL2**: Run Docker Desktop with WSL2 backend
+2. **Clone in WSL**: Clone the repo inside WSL filesystem, not Windows
+3. **Use WSL terminal**: Run commands from WSL bash, not PowerShell
+
+## Local Development (Without Docker)
+
+If you prefer running services natively:
+
+### Prerequisites
+
+```bash
+# Install MongoDB
+# Install Redis
+
+# Verify running
+mongod --version
+redis-server --version
+```
+
+### Run Services
+
+```bash
+# Terminal 1: Auth Service
+cd services/auth-service
+npm install
+npm run dev
+
+# Terminal 2: User Service
+cd services/user-service
+npm install
+npm run dev
+
+# Terminal 3: Dashboard Service
+cd services/dashboard-service
+npm install
+npm run dev
+
+# Terminal 4: Statistics Service
+cd services/statistics-service
+npm install
+npm run dev
+
+# Terminal 5: Frontend
+cd services/frontend
+npm install
+npm run dev
 ```
 
 ## Production Deployment
 
-### Environment Configuration
+### 1. Generate Production Secrets
 
-1. Generate secure secrets:
 ```bash
-openssl rand -base64 64  # For JWT_SECRET
-openssl rand -base64 64  # For JWT_REFRESH_SECRET
+openssl rand -base64 64  # JWT_SECRET
+openssl rand -base64 64  # JWT_REFRESH_SECRET
 ```
 
-2. Update `.env` with production values
+### 2. Update Environment
 
-3. Set `NODE_ENV=production` in docker-compose.yml
+Edit `.env` with production values:
 
-4. Configure proper MongoDB credentials
+```env
+JWT_SECRET=<production-secret>
+JWT_REFRESH_SECRET=<production-secret>
+EMAIL_USERNAME=<production-email>
+EMAIL_PASSWORD=<production-password>
+CLIENT_ORIGIN=https://your-domain.com
+```
 
-### Build & Deploy
+### 3. Build and Deploy
 
 ```bash
 # Build production images
-docker-compose build
+npm run build
 
-# Start services
-docker-compose up -d
+# Start production stack
+docker compose --profile prod up -d
 
 # Check status
-docker-compose ps
+npm run ps
 ```
+
+### 4. Security Checklist
+
+- [ ] Strong JWT secrets (64+ characters)
+- [ ] Production MongoDB password (not default)
+- [ ] HTTPS enabled
+- [ ] CORS configured for production domain
+- [ ] Environment variables in secure vault
+- [ ] Firewall configured
+- [ ] Regular backups enabled
+- [ ] Monitoring and alerting set up
+
+## API Documentation
+
+### Auth Service (Port 5000)
+
+**Authentication**:
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/refresh` - Refresh access token
+- `GET /api/auth/me` - Get current user
+- `POST /api/auth/2fa/enable` - Enable 2FA
+- `POST /api/auth/2fa/verify` - Verify 2FA code
+
+**Password Management**:
+- `POST /api/auth/password/forgot` - Request password reset
+- `POST /api/auth/password/verify-code` - Verify reset code
+- `POST /api/auth/password/reset` - Reset password
+- `PUT /api/auth/password/change` - Change password
+
+**Sessions**:
+- `GET /api/sessions` - Get active sessions
+- `DELETE /api/sessions/:id` - Terminate session
+
+**Health**:
+- `GET /health` - Health check
+
+### User Service (Port 5001)
+
+**Users**:
+- `GET /api/users` - List users (paginated)
+- `GET /api/users/:id` - Get user by ID
+- `POST /api/users` - Create user
+- `PUT /api/users/:id` - Update user
+- `DELETE /api/users/:id` - Delete user
+
+**Roles**:
+- `GET /api/roles` - List roles
+- `GET /api/roles/:id` - Get role by ID
+- `POST /api/roles` - Create role
+- `PUT /api/roles/:id` - Update role
+- `DELETE /api/roles/:id` - Delete role
+
+**Health**:
+- `GET /health` - Health check
+
+### Dashboard Service (Port 5002)
+
+**Dashboards**:
+- `GET /api/dashboard` - Get user dashboard
+- `POST /api/dashboard/widgets` - Add widget
+- `PUT /api/dashboard/widgets/:id` - Update widget
+- `DELETE /api/dashboard/widgets/:id` - Remove widget
+
+**Statistics Proxy**:
+- `GET /api/dashboard/statistics/*` - Proxy to Statistics Service
+
+**Health**:
+- `GET /health` - Health check
+
+### Statistics Service (Port 5003)
+
+**Statistics**:
+- `GET /api/statistics/catalog` - Available statistics
+- `GET /api/statistics/:type` - Get statistics by type
+- `GET /api/statistics/charts/:chartType` - Get chart data
+
+**Health**:
+- `GET /health` - Health check
+
+## Documentation
+
+- [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md) - Complete environment configuration guide
+- [SERVICE_ARCHITECTURE.md](./SERVICE_ARCHITECTURE.md) - Architecture and design patterns
+- [packages/shared/README.md](./packages/shared/README.md) - Shared types and utilities
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+4. Test thoroughly (`npm test`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
 ## License
 
@@ -422,6 +571,9 @@ docker-compose ps
 ## Support
 
 For issues and questions:
-- Check [Troubleshooting](#troubleshooting) section
-- View logs: `make logs`
-- Check service-specific READMEs in `services/` directories
+
+1. Check the [Troubleshooting](#troubleshooting) section
+2. View logs: `npm run logs`
+3. Check [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md)
+4. Review [SERVICE_ARCHITECTURE.md](./SERVICE_ARCHITECTURE.md)
+5. Open an issue on GitHub

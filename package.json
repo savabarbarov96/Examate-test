@@ -1,0 +1,41 @@
+{
+  "name": "@examate/root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Examate - Microservices Examination Management System",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "services/auth-service",
+    "services/user-service",
+    "services/dashboard-service",
+    "services/statistics-service",
+    "services/frontend"
+  ],
+  "scripts": {
+    "setup": "node tools/dev-cli.js setup",
+    "check-ports": "node tools/dev-cli.js check-ports",
+    "build": "node tools/dev-cli.js build",
+    "up": "node tools/dev-cli.js up",
+    "dev": "node tools/dev-cli.js dev",
+    "dev:docker": "node tools/dev-cli.js dev",
+    "down": "node tools/dev-cli.js down",
+    "restart": "node tools/dev-cli.js restart",
+    "logs": "node tools/dev-cli.js logs",
+    "ps": "node tools/dev-cli.js ps",
+    "clean": "node tools/dev-cli.js clean",
+    "help": "node tools/dev-cli.js help"
+  },
+  "keywords": [
+    "examate",
+    "microservices",
+    "docker",
+    "typescript",
+    "nodejs"
+  ],
+  "author": "Examate Team",
+  "license": "MIT"
+}
