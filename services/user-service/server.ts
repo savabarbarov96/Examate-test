@@ -26,16 +26,6 @@ app.use(
   })
 );
 
-app.options(
-  /.*/,
-  cors({
-    origin: origin,
-    credentials: true,
-    methods: ["GET", "POST", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
 app.use(express.json());
 app.use(cookieParser());
 
