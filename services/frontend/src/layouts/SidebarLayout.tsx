@@ -12,7 +12,7 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Home, Users, UserPlus, List, Shield, ShieldPlus, BarChart3 } from "lucide-react";
+import { Home, Users, UserPlus, List, Shield, ShieldPlus, BarChart3, BookOpen, GraduationCap } from "lucide-react";
 import { useState } from "react";
 import TopNavProfile from "@/components/TopNavProfile";
 
@@ -24,7 +24,14 @@ export default function SidebarLayout() {
       {/* Sidebar */}
       <Sidebar>
         <SidebarHeader>
-          <h2 className="px-2 font-bold">My App</h2>
+          <div className="px-2 py-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <GraduationCap className="w-6 h-6 text-primary" />
+              </div>
+              <h2 className="font-display text-xl text-primary">Examate</h2>
+            </div>
+          </div>
         </SidebarHeader>
 
         <SidebarContent>
@@ -41,6 +48,21 @@ export default function SidebarLayout() {
               >
                 <Home size={18} />
                 <span>Dashboard</span>
+              </NavLink>
+            </SidebarMenuItem>
+
+            {/* Exams */}
+            <SidebarMenuItem>
+              <NavLink
+                to="/exams"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-2 py-2 rounded-md transition-colors ${
+                    isActive ? "bg-muted text-primary font-semibold" : "hover:bg-muted"
+                  }`
+                }
+              >
+                <BookOpen size={18} />
+                <span>Examinations</span>
               </NavLink>
             </SidebarMenuItem>
 

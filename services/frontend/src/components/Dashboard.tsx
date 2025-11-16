@@ -82,96 +82,121 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="w-full max-w-sm md:max-w-7xl flex flex-col gap-6">
+    <div className="w-full max-w-7xl mx-auto flex flex-col gap-6">
+      {/* Welcome Header */}
+      <div className="animate-fade-in-up">
+        <h1 className="text-5xl md:text-6xl font-display text-primary mb-2">
+          Dashboard
+        </h1>
+        <p className="text-lg text-muted-foreground">
+          Welcome back to your academic overview
+        </p>
+      </div>
+
       {/* Session Overview Card */}
-      <Card>
+      <Card className="glass-effect border-2 animate-fade-in-up delay-100">
         <CardHeader>
-          <h2 className="text-lg font-semibold">Session Overview</h2>
+          <h2 className="text-2xl font-display text-primary">Session Overview</h2>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           {loading ? (
             <>
               <Skeleton className="h-5 w-64" />
               <Skeleton className="h-5 w-48" />
             </>
           ) : (
-            <>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Last login:</span>
-                <span className="font-medium">{formatLastLogin(lastLogin)}</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                  Last Login
+                </div>
+                <div className="text-2xl font-display text-primary">
+                  {formatLastLogin(lastLogin)}
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <StatusDot variant="success" />
-                <span className="text-muted-foreground">Current active users:</span>
-                <span className="font-medium">{activeSessions}</span>
+              <div className="p-4 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                  <StatusDot variant="success" />
+                  Active Users
+                </div>
+                <div className="text-2xl font-display text-primary">
+                  {activeSessions}
+                </div>
               </div>
-            </>
+            </div>
           )}
         </CardContent>
       </Card>
 
-      <Separator />
-
       {/* Widgets Grid with Drag and Drop */}
       {!loading && widgets.length > 0 && (
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="widgets-grid" direction="horizontal">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {widgets.map((widget, index) => (
-                  <Draggable key={widget.id} draggableId={widget.id} index={index}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                      >
-                        <WidgetCard
-                          widget={widget}
-                          onRename={handleRename}
-                          onDelete={handleDelete}
-                          onToggleLegend={handleToggleLegend}
-                          isDragging={snapshot.isDragging}
-                        />
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+        <div className="animate-fade-in-up delay-200">
+          <div className="mb-4">
+            <h2 className="text-3xl font-display text-primary">Analytics Widgets</h2>
+            <p className="text-muted-foreground">Drag to reorder your custom statistics</p>
+          </div>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="widgets-grid" direction="horizontal">
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                >
+                  {widgets.map((widget, index) => (
+                    <Draggable key={widget.id} draggableId={widget.id} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className={`animate-scale-in delay-${Math.min((index + 3) * 100, 600)}`}
+                        >
+                          <WidgetCard
+                            widget={widget}
+                            onRename={handleRename}
+                            onDelete={handleDelete}
+                            onToggleLegend={handleToggleLegend}
+                            isDragging={snapshot.isDragging}
+                          />
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </div>
       )}
 
       {/* Empty State */}
       {!loading && widgets.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-6 py-12">
-          <img
-            src={FullLogo}
-            alt="ExaMate Logo"
-            className="h-16 w-auto opacity-50"
-          />
-          <div className="text-center space-y-2">
-            <p className="text-muted-foreground">No widgets added to the Dashboard.</p>
-            <p className="text-sm text-muted-foreground">
-              You can add new graphs from the Statistics menu.
-            </p>
-          </div>
-        </div>
+        <Card className="glass-effect border-2 animate-fade-in-up delay-300">
+          <CardContent className="flex flex-col items-center justify-center gap-6 py-16">
+            <div className="p-4 rounded-full bg-primary/10">
+              <img
+                src={FullLogo}
+                alt="ExaMate Logo"
+                className="h-16 w-auto opacity-70"
+              />
+            </div>
+            <div className="text-center space-y-3">
+              <h3 className="text-2xl font-display text-primary">No Widgets Yet</h3>
+              <p className="text-muted-foreground max-w-md">
+                Your dashboard is empty. Add custom analytics widgets from the Statistics menu to visualize your data.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/statistics')}
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover-glow transition-all duration-300 font-medium"
+            >
+              Go to Statistics
+            </button>
+          </CardContent>
+        </Card>
       )}
-
-      {/* Temporary logout button - remove this when navigation is implemented */}
-      <button
-        onClick={handleLogout}
-        className="self-end bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm"
-      >
-        Logout
-      </button>
     </div>
   );
 }

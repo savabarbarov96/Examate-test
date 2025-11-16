@@ -14,6 +14,10 @@ import SidebarLayout from "./layouts/SidebarLayout";
 import ProfilePage from "./components/UserProfile";
 import AuthGate from "./components/auth/AuthGate";
 import StatisticsPage from "./components/pages/Statistics";
+import ExamListPage from "./components/pages/ExamList";
+import ExamCreatePage from "./components/pages/ExamCreate";
+import ExamTakePage from "./components/pages/ExamTake";
+import ExamResultsPage from "./components/pages/ExamResults";
 
 function App() {
   return (
@@ -25,12 +29,18 @@ function App() {
               <Route element={<SidebarLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/statistics" element={<StatisticsPage />} />
+                <Route path="/exams" element={<ExamListPage />} />
+                <Route path="/exams/create" element={<ExamCreatePage />} />
+                <Route path="/exams/:id/edit" element={<ExamCreatePage />} />
                 <Route path="/all-users" element={<AllUsersPage />} />
                 <Route path="/create-user" element={<CreateUserPage />} />
                 <Route path="/all-roles" element={<AllUserRolesPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/users/:id/edit" element={<ProfilePage />} />
               </Route>
+              {/* Exam taking has its own layout (no sidebar) */}
+              <Route path="/exams/:id/take" element={<ExamTakePage />} />
+              <Route path="/exams/:id/results" element={<ExamResultsPage />} />
             </Route>
 
             <Route path="/" element={<LoginPage />} />
