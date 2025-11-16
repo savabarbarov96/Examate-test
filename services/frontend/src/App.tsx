@@ -13,6 +13,7 @@ import AllUserRolesPage from "./components/pages/AllUserRoles";
 import SidebarLayout from "./layouts/SidebarLayout";
 import ProfilePage from "./components/UserProfile";
 import AuthGate from "./components/auth/AuthGate";
+import StatisticsPage from "./components/pages/Statistics";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route element={<SidebarLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/statistics" element={<StatisticsPage />} />
                 <Route path="/all-users" element={<AllUsersPage />} />
                 <Route path="/create-user" element={<CreateUserPage />} />
                 <Route path="/all-roles" element={<AllUserRolesPage />} />

@@ -1,7 +1,6 @@
 import express from "express";
 import multer from "multer";
 import { protect } from "../middlewares/protect.js";
-import { checkPermission } from "../middlewares/permissions.js";
 import { getAllUsers, getUserById, createUser, updateUser, deleteUser, getCurrentUser, } from "../controllers/user.js";
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -21,9 +20,10 @@ upload.single("profilePic"), createUser);
 // UPDATE
 router.put("/:id", protect, 
 // checkPermission("users", "edit"),
-updateUser);
+upload.single("profilePic"), updateUser);
 // DELETE
 router.delete("/:id", 
 // protect,
-checkPermission("users", "edit"), deleteUser);
+// checkPermission("users", "edit"),
+deleteUser);
 export default router;

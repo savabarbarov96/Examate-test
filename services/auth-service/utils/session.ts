@@ -1,10 +1,24 @@
 import Redis from "ioredis";
 import { v4 as uuidv4 } from "uuid";
 
-const redis = new Redis(process.env.REDIS_URL || "redis://default:NtrpfnDC6bQUJCQxlK2sj0vFVMCMZiDxu09xSouhsAOktGZ2BbW4YFNbrjuAJnMx@s0owg0cwso080gg80ckgcow4:6379/0");
+const redisConfig = {
+  connectTimeout: 10000,
+  maxRetriesPerRequest: 3,
+  retryStrategy(times) {
+    const delay = Math.min(times * 50, 2000);
+    return delay;
+  },
+  family: 4, // Force IPv4
+};
+
+export const redis = new Redis(process.env.REDIS_URL || "redis://127.0.0.1:6379", redisConfig);
 
 redis.on("error", (err) => {
   console.error("Redis connection error:", err);
+});
+
+redis.on("connect", () => {
+  console.log("Redis connected successfully");
 });
 
 export async function createSession(userId: string) {
@@ -34,10 +48,15 @@ export async function countActiveSessions() {
 
 // real-time session updates via Socket.IO
 export function watchSessions(io) {
-  const subscriber = new Redis(process.env.REDIS_URL || "redis://default:NtrpfnDC6bQUJCQxlK2sj0vFVMCMZiDxu09xSouhsAOktGZ2BbW4YFNbrjuAJnMx@s0owg0cwso080gg80ckgcow4:6379/0");
+  const subscriber = new Redis(process.env.REDIS_URL || "redis://127.0.0.1:6379", redisConfig);
+
+  subscriber.on("connect", () => {
+    console.log("Redis subscriber connected successfully");
+  });
 
   subscriber.subscribe("sessions", (err, count) => {
     if (err) console.error("Failed to subscribe to Redis sessions channel:", err);
+    else console.log("Subscribed to Redis sessions channel");
   });
 
   subscriber.on("message", async (_, message) => {

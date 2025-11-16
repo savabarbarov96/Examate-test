@@ -1,5 +1,5 @@
 const BASE_URL =
-  import.meta.env.VITE_AUTH_API_URL || "http://localhost:8081/api/auth";
+  import.meta.env.VITE_AUTH_API_URL || "http://localhost:5000";
 
 async function handleResponse(res: Response) {
   const data = await res.json();

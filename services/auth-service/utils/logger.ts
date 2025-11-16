@@ -1,4 +1,33 @@
+import winston from "winston";
 import LoginAttempt from "../models/LoginAttempt.js";
+
+const { combine, timestamp, colorize, align, printf } = winston.format;
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || "info",
+  format: combine(
+    colorize({ all: true }),
+    timestamp({
+      format: "YYYY-MM-DD hh:mm:ss.SSS A",
+    }),
+    align(),
+    printf(
+      (info) =>
+        `[${info.timestamp}] [${info.correlationId || "no-correlation-id"}] ${info.level}: ${info.message}`
+    )
+  ),
+  transports: [new winston.transports.Console()],
+});
+
+type LoginAttemptPayload = {
+  username?: string;
+  userId?: string;
+  ip?: string;
+  geo?: Record<string, unknown> | null;
+  device?: Record<string, unknown> | null;
+  status: string;
+  message?: string;
+};
 
 export async function recordLoginAttempt({
   username,
@@ -8,15 +37,7 @@ export async function recordLoginAttempt({
   device,
   status,
   message,
-}: {
-  username?: string;
-  userId?: string;
-  ip: string;
-  geo?: any;
-  device?: any;
-  status: "success" | "failed" | "locked" | "unverified";
-  message: string;
-}) {
+}: LoginAttemptPayload): Promise<void> {
   try {
     await LoginAttempt.create({
       username,
@@ -29,6 +50,8 @@ export async function recordLoginAttempt({
       timestamp: new Date(),
     });
   } catch (err) {
-    console.error("Failed to log login attempt:", err);
+    logger.error(`Failed to log login attempt: ${(err as Error).message}`);
   }
 }
+
+export default logger;

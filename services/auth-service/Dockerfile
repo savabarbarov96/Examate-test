@@ -1,5 +1,5 @@
 # ---------- Stage 1: Build ----------
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # ---------- Stage 2: Run ----------
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -25,8 +25,8 @@ COPY --from=builder /app/package*.json ./
 # Install only production dependencies
 RUN npm install
 
-# Expose app port (adjust if not 3000)
-EXPOSE 8081
+# Expose app port
+EXPOSE 5000
 
 # Start the app
 CMD ["node", "dist/server.js"]

@@ -12,7 +12,7 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Home, Users, UserPlus, List, Shield, ShieldPlus } from "lucide-react";
+import { Home, Users, UserPlus, List, Shield, ShieldPlus, BarChart3 } from "lucide-react";
 import { useState } from "react";
 import TopNavProfile from "@/components/TopNavProfile";
 
@@ -41,6 +41,21 @@ export default function SidebarLayout() {
               >
                 <Home size={18} />
                 <span>Dashboard</span>
+              </NavLink>
+            </SidebarMenuItem>
+
+            {/* Statistics */}
+            <SidebarMenuItem>
+              <NavLink
+                to="/statistics"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-2 py-2 rounded-md transition-colors ${
+                    isActive ? "bg-muted text-primary font-semibold" : "hover:bg-muted"
+                  }`
+                }
+              >
+                <BarChart3 size={18} />
+                <span>Statistics</span>
               </NavLink>
             </SidebarMenuItem>
 

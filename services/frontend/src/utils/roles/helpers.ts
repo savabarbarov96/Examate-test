@@ -1,3 +1,5 @@
+import api from '@/utils/api';
+
 export type Role = {
   _id: string;
   name: string;
@@ -6,53 +8,30 @@ export type Role = {
 
 export const getAllRoles = async (): Promise<Role[] | null> => {
   try {
-    const res = await fetch("https://user-service.examate.net/api/roles"
-        , {
-      credentials: "include",
-    });
-    if (!res.ok) throw new Error(`Failed to fetch roles: ${res.status}`);
-    const data = await res.json();
-
-    return data.roles || [];
+    const res = await api.get("/api/roles");
+    return res.data.roles || [];
   } catch (err) {
     console.error(err);
-
     return null;
   }
 };
 
 export const createRole = async (role: Partial<Role>): Promise<Role | null> => {
   try {
-    const res = await fetch("https://user-service.examate.net/api/roles"
-        , {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(role),
-    });
-    if (!res.ok) throw new Error(`Failed to create role: ${res.status}`);
-    const data = await res.json();
-
-    return data.role;
+    const res = await api.post("/api/roles", role);
+    return res.data.role;
   } catch (err) {
     console.error(err);
-
     return null;
   }
 };
 
 export const deleteRole = async (id: string): Promise<boolean> => {
   try {
-    const res = await fetch(`https://user-service.examate.net/api/roles/${id}`
-        , {
-      method: "DELETE",
-      credentials: "include",
-    });
-
-    return res.ok;
+    await api.delete(`/api/roles/${id}`);
+    return true;
   } catch (err) {
     console.error(err);
-
     return false;
   }
 };
@@ -62,18 +41,8 @@ export const updateRole = async (
   role: Partial<Role>
 ): Promise<Role | null> => {
   try {
-    const res = await fetch(`https://user-service.examate.net/api/roles/${id}`
-        , {
-      method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(role),
-    });
-
-    if (!res.ok) throw new Error(`Failed to update role: ${res.status}`);
-    const data = await res.json();
-
-    return data.role || null;
+    const res = await api.patch(`/api/roles/${id}`, role);
+    return res.data.role || null;
   } catch (err) {
     console.error(err);
     return null;

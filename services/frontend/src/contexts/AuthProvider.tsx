@@ -2,10 +2,11 @@ import {
   createContext,
   useContext,
   useEffect,
-  useLayoutEffect,
   useState,
 } from "react";
-import api from "@/utils/api";
+import { toast } from "sonner";
+import authApi from "@/utils/auth/api";
+import { subscribeToAuthEvents } from "@/utils/auth/sessionEvents";
 
 type AuthStatus = "idle" | "authenticated" | "unauthenticated" | "checking";
 
@@ -32,35 +33,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const verifySession = async () => {
       setStatus("checking");
       try {
-        const res = await api.get("/api/auth/me", { withCredentials: true });
+        const res = await authApi.get("/api/auth/me");
         setUser(res.data);
         setStatus("authenticated");
       } catch (err: any) {
-        console.log("Error caught in verifySession:", err);
+        // The authApi interceptor will handle 401 errors and token refresh
+        // If we reach here, either the refresh failed or it's a different error
+        console.error("[AuthProvider] Session verification failed:", err.response?.data?.message || err.message);
 
-        if (err.response) {
-          console.log("Response data:", err.response.data);
-          console.log("Response status:", err.response.status);
-        } else {
-          console.log("No response received, error:", err.message);
-        }
+        setUser(null);
+        setStatus("unauthenticated");
 
-        if (err.response?.status === 401) {
-          try {
-            await api.get("/api/auth/refresh", { withCredentials: true });
-            const resRetry = await api.get("/api/auth/me", {
-              withCredentials: true,
-            });
-            setUser(resRetry.data);
-            setStatus("authenticated");
-          } catch (refreshErr: any) {
-            console.log("Refresh failed:", refreshErr);
-            setUser(null);
-            setStatus("unauthenticated");
-          }
-        } else {
-          setUser(null);
-          setStatus("unauthenticated");
+        // If it's a 403 (locked/unverified account), log the specific reason
+        if (err.response?.status === 403) {
+          console.warn("[AuthProvider] Account access restricted:", err.response.data);
         }
       }
     };
@@ -68,44 +54,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     verifySession();
   }, []);
 
-  // useLayoutEffect(() => {
-  //   const interceptor = api.interceptors.response.use(
-  //     (res) => res,
-  //     async (error) => {
-  //       const originalRequest = error.config;
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthEvents((event) => {
+      if (event.type === "SESSION_EXPIRED") {
+        setUser(null);
+        setStatus("unauthenticated");
+        toast.warning(event.message || "Your session expired. Please sign in again.");
+      }
+    });
 
-  //       console.log("hello");
-
-  //       if (
-  //         !originalRequest._retry &&
-  //         !originalRequest.url.includes("/auth/refresh")
-  //       ) {
-  //         originalRequest._retry = true;
-
-  //         if (error.response?.status === 401) {
-  //           try {
-  //             await api.get("/api/auth/refresh", { withCredentials: true });
-
-  //             return api(originalRequest);
-  //           } catch {
-  //             setUser(null);
-  //             setStatus("unauthenticated");
-  //             return Promise.reject(error);
-  //           }
-  //         }
-
-  //         if (error.response?.status === 403) {
-  //           console.warn("User locked/unverified:", error.response.data);
-  //           return Promise.reject(error);
-  //         }
-  //       }
-
-  //       return Promise.reject(error);
-  //     }
-  //   );
-
-  //   return () => api.interceptors.response.eject(interceptor);
-  // }, []);
+    return unsubscribe;
+  }, [setStatus, setUser]);
 
   return (
     <AuthContext.Provider value={{ user, status, setStatus, setUser }}>

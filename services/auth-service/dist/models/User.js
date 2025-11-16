@@ -16,9 +16,22 @@ const userSchema = new mongoose.Schema({
             message: "Username contains invalid characters.",
         },
     },
+    client: { type: String, trim: true },
+    phone: { type: String, trim: true },
+    dob: { type: Date },
+    profilePic: { type: String },
     status: { type: String, default: "unverified" },
     accountLocked: { type: Boolean, default: false },
-    password: { type: String, required: true, minlength: 8, select: false },
+    password: {
+        type: String,
+        required: true,
+        minlength: 8,
+        select: false,
+        validate: {
+            validator: (value) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/.test(value),
+            message: "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
+        },
+    },
     passwordConfirm: {
         type: String,
         required: [true, "Confirm password is required"],
@@ -29,12 +42,15 @@ const userSchema = new mongoose.Schema({
             message: "Passwords are not the same!",
         },
     },
+    passwordHistory: [{ type: String, select: false }],
     passwordChangedAt: Date,
     twoFactorCode: { type: String, select: false },
     twoFactorCodeExpires: Date,
     twoFactorEnabled: { type: Boolean, default: false },
     failedLoginAttempts: { type: Number, default: 0 },
     lastFailedLoginAttempt: Date,
+    verificationToken: String,
+    verificationExpires: Date,
     isLocked: { type: Boolean, default: false },
     verificationCode: { type: String, select: false },
     verificationCodeExpires: Date,
@@ -46,11 +62,27 @@ const userSchema = new mongoose.Schema({
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password"))
         return next();
-    this.password = await bcrypt.hash(this.password, 12);
-    this.passwordConfirm = undefined;
-    if (!this.isNew) {
-        this.passwordChangedAt = new Date(Date.now() - 1000);
+    const plainPassword = this.password;
+    if (!plainPassword) {
+        return next(new Error("Password is required."));
     }
+    if (this.passwordHistory && this.passwordHistory.length > 0) {
+        const isPasswordUsed = await Promise.all(this.passwordHistory.map((p) => bcrypt.compare(plainPassword, p)));
+        if (isPasswordUsed.some((isUsed) => isUsed)) {
+            return next(new Error("You cannot reuse an old password."));
+        }
+    }
+    if (!this.passwordHistory) {
+        this.passwordHistory = [];
+    }
+    const hashedHistoryEntry = await bcrypt.hash(plainPassword, 12);
+    this.passwordHistory.push(hashedHistoryEntry);
+    if (this.passwordHistory.length > 5) {
+        this.passwordHistory.shift();
+    }
+    this.password = await bcrypt.hash(plainPassword, 12);
+    this.passwordConfirm = undefined;
+    this.passwordChangedAt = new Date(Date.now() - 1000);
     next();
 });
 userSchema.methods.changePasswordAfter = function (JWTTimestamp) {

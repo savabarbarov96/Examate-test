@@ -13,7 +13,7 @@
     "resolveJsonModule": true,        // If you import JSON config files
     "noImplicitAny": false,
   },
-  "include": ["**/*.ts", "types/**/*.d.ts"],
+  "include": ["**/*.ts", "types/**/*.d.ts", "env.d.ts"],
   "exclude": ["node_modules"],
   "ts-node": {
     "esm": true

@@ -1,15 +1,17 @@
+import dotenv from "dotenv";
+
+// IMPORTANT: Load environment variables FIRST before any other imports
+dotenv.config();
+
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
 import { initializeRoles } from "./utils/seedRoles.js";
 
 import userRoutes from "./routes/user.js";
 import roleRoutes from "./routes/role.js";
-
-dotenv.config();
 const app = express();
 
 const origin =
