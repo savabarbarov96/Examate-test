@@ -6,14 +6,6 @@
 version: '3.8'
 
 # YAML Anchors for shared configuration (DRY principle)
-x-common-variables: &common-env
-  NODE_ENV: production
-  JWT_SECRET: ${JWT_SECRET}
-  JWT_COOKIE_EXPIRES_IN: 90
-
-x-mongo-connection: &mongo-uri
-  MONGO_URI: mongodb://root:examate_mongo_pass@mongodb:27017/examate?authSource=admin
-
 x-logging: &default-logging
   driver: "json-file"
   options:
@@ -89,14 +81,16 @@ services:
     ports:
       - "5000:5000"
     environment:
-      <<: *common-env
-      PORT: 5000
-      <<: *mongo-uri
-      REDIS_URL: redis://redis:6379
-      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      EMAIL_USERNAME: ${EMAIL_USERNAME}
-      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb://root:examate_mongo_pass@mongodb:27017/examate?authSource=admin
+      - REDIS_URL=redis://redis:6379
+      - CLIENT_ORIGIN=${CLIENT_ORIGIN:-http://localhost:8080}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_COOKIE_EXPIRES_IN=90
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -115,13 +109,15 @@ services:
     ports:
       - "5001:5001"
     environment:
-      <<: *common-env
-      PORT: 5001
-      <<: *mongo-uri
-      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      EMAIL_USERNAME: ${EMAIL_USERNAME}
-      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      - NODE_ENV=production
+      - PORT=5001
+      - MONGO_URI=mongodb://root:examate_mongo_pass@mongodb:27017/examate?authSource=admin
+      - CLIENT_ORIGIN=${CLIENT_ORIGIN:-http://localhost:8080}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_COOKIE_EXPIRES_IN=90
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -138,11 +134,13 @@ services:
     ports:
       - "5002:5002"
     environment:
-      <<: *common-env
-      PORT: 5002
-      <<: *mongo-uri
-      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
-      STATISTICS_SERVICE_URL: http://statistics-service:5003
+      - NODE_ENV=production
+      - PORT=5002
+      - MONGO_URI=mongodb://root:examate_mongo_pass@mongodb:27017/examate?authSource=admin
+      - CLIENT_ORIGIN=${CLIENT_ORIGIN:-http://localhost:8080}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_COOKIE_EXPIRES_IN=90
+      - STATISTICS_SERVICE_URL=http://statistics-service:5003
     depends_on:
       mongodb:
         condition: service_healthy
@@ -161,10 +159,12 @@ services:
     ports:
       - "5003:5003"
     environment:
-      <<: *common-env
-      PORT: 5003
-      <<: *mongo-uri
-      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
+      - NODE_ENV=production
+      - PORT=5003
+      - MONGO_URI=mongodb://root:examate_mongo_pass@mongodb:27017/examate?authSource=admin
+      - CLIENT_ORIGIN=${CLIENT_ORIGIN:-http://localhost:8080}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_COOKIE_EXPIRES_IN=90
     depends_on:
       mongodb:
         condition: service_healthy
