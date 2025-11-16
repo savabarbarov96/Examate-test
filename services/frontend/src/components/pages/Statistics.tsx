@@ -172,66 +172,62 @@ export default function StatisticsPage() {
   const analyticsWidgets = widgetCatalog.filter((w) => w.category === "analytics");
 
   return (
-    <div className="flex min-h-svh flex-col bg-muted">
-      <div className="w-full max-w-7xl mx-auto p-6 md:p-10 space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Statistics & Analytics</h1>
-          <p className="text-muted-foreground">
+    <div className="min-h-screen bg-scholarly-gradient p-6 md:p-8">
+      <div className="w-full max-w-7xl mx-auto space-y-8">
+        <div className="space-y-3 animate-fade-in-up">
+          <h1 className="text-5xl md:text-6xl font-display text-primary">Statistics & Analytics</h1>
+          <p className="text-lg text-muted-foreground">
             Add powerful visualizations and insights to your dashboard
           </p>
           {catalogError && (
-            <p className="text-sm text-destructive">{catalogError}</p>
+            <p className="text-sm text-destructive bg-destructive/10 px-4 py-2 rounded-lg border border-destructive/20">{catalogError}</p>
           )}
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold">Charts</h2>
+        <div className="space-y-6 animate-fade-in-up delay-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10 ring-1 ring-primary/20">
+              <BarChart3 className="h-6 w-6 text-primary" />
+            </div>
+            <h2 className="text-3xl font-display text-primary">Charts</h2>
             {catalogLoading && (
-              <span className="text-xs text-muted-foreground">Loading...</span>
+              <span className="text-sm text-muted-foreground animate-pulse">Loading...</span>
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {chartWidgets.map((widget) => {
+            {chartWidgets.map((widget, index) => {
               const Icon = widget.icon;
               return (
                 <Card
                   key={widget.type}
-                  className="relative overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer group"
+                  className={`manuscript-card hover-glow cursor-pointer group animate-scale-in delay-${Math.min((index + 2) * 100, 600)}`}
                   onClick={() => handleAddWidget(widget)}
                 >
-                  <CardHeader>
+                  <CardHeader className="space-y-4">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                          <Icon className="h-6 w-6" />
+                      <div className="p-3 rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
+                        <Icon className="h-7 w-7" />
+                      </div>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                          Click to add
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddWidget(widget);
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
                     </div>
-                    <CardTitle className="text-lg">{widget.title}</CardTitle>
-                    <CardDescription>{widget.description}</CardDescription>
+                    <div className="space-y-2">
+                      <CardTitle className="text-xl font-display text-primary">{widget.title}</CardTitle>
+                      <CardDescription className="text-base leading-relaxed">{widget.description}</CardDescription>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <Button
-                      className="w-full"
+                      className="w-full hover-glow"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleAddWidget(widget);
                       }}
                     >
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="h-5 w-5 mr-2" />
                       Add to Dashboard
                     </Button>
                   </CardContent>
@@ -241,54 +237,50 @@ export default function StatisticsPage() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <PieChart className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold">Analytics</h2>
+        <div className="space-y-6 animate-fade-in-up delay-200">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-accent/20 ring-1 ring-accent/30">
+              <PieChart className="h-6 w-6 text-accent-foreground" />
+            </div>
+            <h2 className="text-3xl font-display text-primary">Analytics</h2>
             {catalogLoading && (
-              <span className="text-xs text-muted-foreground">Loading...</span>
+              <span className="text-sm text-muted-foreground animate-pulse">Loading...</span>
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {analyticsWidgets.map((widget) => {
+            {analyticsWidgets.map((widget, index) => {
               const Icon = widget.icon;
               return (
                 <Card
                   key={widget.type}
-                  className="relative overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer group"
+                  className={`ink-accent-card hover-glow cursor-pointer group animate-scale-in delay-${Math.min((index + chartWidgets.length + 2) * 100, 600)}`}
                   onClick={() => handleAddWidget(widget)}
                 >
-                  <CardHeader>
+                  <CardHeader className="space-y-4">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                          <Icon className="h-6 w-6" />
+                      <div className="p-3 rounded-xl bg-accent/20 text-accent-foreground ring-1 ring-accent/30">
+                        <Icon className="h-7 w-7" />
+                      </div>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="px-3 py-1.5 rounded-full bg-accent/20 text-accent-foreground text-xs font-semibold">
+                          Click to add
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddWidget(widget);
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
                     </div>
-                    <CardTitle className="text-lg">{widget.title}</CardTitle>
-                    <CardDescription>{widget.description}</CardDescription>
+                    <div className="space-y-2">
+                      <CardTitle className="text-xl font-display text-primary">{widget.title}</CardTitle>
+                      <CardDescription className="text-base leading-relaxed">{widget.description}</CardDescription>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <Button
-                      className="w-full"
+                      className="w-full hover-glow"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleAddWidget(widget);
                       }}
                     >
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="h-5 w-5 mr-2" />
                       Add to Dashboard
                     </Button>
                   </CardContent>
