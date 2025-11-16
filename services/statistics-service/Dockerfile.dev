@@ -1,12 +1,22 @@
+# =============================================================================
+# Statistics Service - Development Dockerfile
+# Minimal setup for hot reload with volume mounts
+# =============================================================================
+
 FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json tsconfig.json ./
-RUN npm install
+# Install dependencies at build time (will be overridden by volume mount in compose)
+COPY package.json package-lock.json tsconfig.json ./
 
-COPY . .
+# Use npm ci for faster, deterministic installs
+RUN npm ci
+
+# Note: Source code is mounted via volumes in docker-compose.dev.yml
+# This allows for hot reload without rebuilding the image
 
 EXPOSE 5003
 
+# Start in development mode with hot reload
 CMD ["npm", "run", "dev"]

@@ -1,32 +1,77 @@
-# ---------- Stage 1: Build ----------
+# =============================================================================
+# Dashboard Service - Production Dockerfile
+# Multi-stage build with npm ci, non-root user, and layer optimization
+# =============================================================================
+
+# ---------- Stage 1: Dependencies ----------
+FROM node:20-alpine AS dependencies
+
+WORKDIR /app
+
+# Copy only package lock files for better caching
+COPY package.json package-lock.json ./
+
+# Install dependencies with npm ci (deterministic, faster than npm install)
+RUN npm ci --only=production && \
+    # Cache production dependencies
+    cp -R node_modules /prod_node_modules && \
+    # Install all dependencies (including dev) for build
+    npm ci
+
+# ---------- Stage 2: Build ----------
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy and install all dependencies (including dev)
-COPY package*.json tsconfig.json ./
-RUN npm install
+# Copy dependencies from previous stage
+COPY --from=dependencies /app/node_modules ./node_modules
 
-# Copy the full source code
-COPY . .
+# Copy source files
+COPY package.json package-lock.json tsconfig.json ./
+COPY src ./src
+COPY models ./models
+COPY routes ./routes
+COPY middleware ./middleware
+COPY controllers ./controllers
+COPY utils ./utils
 
-# Compile TypeScript → JavaScript
+# Build TypeScript
 RUN npm run build
 
-# ---------- Stage 2: Run ----------
-FROM node:20-alpine
+# ---------- Stage 3: Runtime ----------
+FROM node:20-alpine AS runtime
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
 WORKDIR /app
 
-# Copy only compiled output and production deps
+# Copy production dependencies
+COPY --from=dependencies /prod_node_modules ./node_modules
+
+# Copy built application
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/package.json ./
 
-# Install only production dependencies
-RUN npm install --only=production
+# Change ownership to non-root user
+RUN chown -R nodejs:nodejs /app
 
-# Expose app port
+# Switch to non-root user
+USER nodejs
+
+# Expose port
 EXPOSE 5002
 
-# Start the app
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:5002/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
 CMD ["node", "dist/server.js"]

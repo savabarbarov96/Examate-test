@@ -1,19 +1,22 @@
+# =============================================================================
+# Frontend - Development Dockerfile
+# Minimal setup for Vite dev server with hot reload
+# =============================================================================
+
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Install dependencies at build time (will be overridden by volume mount in compose)
+COPY package.json package-lock.json ./
 
-# Install all dependencies
-RUN npm install
+# Use npm ci for faster, deterministic installs
+RUN npm ci
 
-# Copy source code
-COPY . .
+# Note: Source code is mounted via volumes in docker-compose.dev.yml
+# Vite provides HMR (Hot Module Replacement)
 
-# Expose Vite dev server port
 EXPOSE 3000
 
-# Environment variables from docker-compose will be available during runtime
-# Start in development mode with hot reload, listening on 0.0.0.0 for Docker network access
-CMD ["npm", "run", "dev"]
+# Start Vite dev server (host 0.0.0.0 allows Docker network access)
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

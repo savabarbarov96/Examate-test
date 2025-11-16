@@ -1,74 +1,82 @@
-version: '3.8'
+# =============================================================================
+# Examate - Development Overrides
+# Hot reload with volume mounts, no redundant npm installs
+# =============================================================================
 
 services:
+  # Infrastructure services inherit from base (no overrides needed)
+
+  # Backend services with hot reload
   auth-service:
     build:
       context: ./services/auth-service
       dockerfile: Dockerfile.dev
+    profiles: ["dev"]
     environment:
-      - NODE_ENV=development
-      - CLIENT_ORIGIN=http://localhost:3000
+      NODE_ENV: development
+      CLIENT_ORIGIN: http://localhost:3000
     volumes:
+      # Mount source for hot reload
       - ./services/auth-service:/app
+      # Preserve node_modules from image
       - /app/node_modules
       - /app/dist
-    command: sh -c "npm install && npm run dev"
+    # No command override - use Dockerfile.dev CMD
 
   user-service:
     build:
       context: ./services/user-service
       dockerfile: Dockerfile.dev
+    profiles: ["dev"]
     environment:
-      - NODE_ENV=development
-      - CLIENT_ORIGIN=http://localhost:3000
+      NODE_ENV: development
+      CLIENT_ORIGIN: http://localhost:3000
     volumes:
       - ./services/user-service:/app
       - /app/node_modules
       - /app/dist
-    command: sh -c "npm install && npm run dev"
-
-  statistics-service:
-    build:
-      context: ./services/statistics-service
-      dockerfile: Dockerfile.dev
-    environment:
-      - NODE_ENV=development
-      - CLIENT_ORIGIN=http://localhost:3000
-    volumes:
-      - ./services/statistics-service:/app
-      - /app/node_modules
-      - /app/dist
-    command: sh -c "npm install && npm run dev"
 
   dashboard-service:
     build:
       context: ./services/dashboard-service
       dockerfile: Dockerfile.dev
+    profiles: ["dev"]
     environment:
-      - NODE_ENV=development
-      - CLIENT_ORIGIN=http://localhost:3000
-      - STATISTICS_SERVICE_URL=http://statistics-service:5003
+      NODE_ENV: development
+      CLIENT_ORIGIN: http://localhost:3000
+      STATISTICS_SERVICE_URL: http://statistics-service:5003
     volumes:
       - ./services/dashboard-service:/app
       - /app/node_modules
       - /app/dist
-    command: sh -c "npm install && npm run dev"
 
+  statistics-service:
+    build:
+      context: ./services/statistics-service
+      dockerfile: Dockerfile.dev
+    profiles: ["dev"]
+    environment:
+      NODE_ENV: development
+      CLIENT_ORIGIN: http://localhost:3000
+    volumes:
+      - ./services/statistics-service:/app
+      - /app/node_modules
+      - /app/dist
+
+  # Frontend with Vite HMR
   frontend:
     build:
       context: ./services/frontend
       dockerfile: Dockerfile.dev
+    profiles: ["dev"]
     environment:
-      - VITE_API_URL=http://localhost:5001
-      - VITE_AUTH_API_URL=http://localhost:5000
-      - VITE_DASHBOARD_API_URL=http://localhost:5002
-      - VITE_STATISTICS_API_URL=http://localhost:5003
-      - VITE_DEV_PORT=3000
-      - FRONTEND_DEV_PORT=3000
+      VITE_API_URL: http://localhost:5001
+      VITE_AUTH_API_URL: http://localhost:5000
+      VITE_DASHBOARD_API_URL: http://localhost:5002
+      VITE_STATISTICS_API_URL: http://localhost:5003
     volumes:
       - ./services/frontend:/app
       - /app/node_modules
       - /app/dist
     ports:
       - "${FRONTEND_DEV_PORT:-3000}:3000"
-    command: sh -c "npm install && npm run dev"

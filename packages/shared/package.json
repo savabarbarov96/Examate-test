@@ -1,0 +1,23 @@
+{
+  "name": "@examate/shared",
+  "version": "1.0.0",
+  "description": "Shared types, DTOs, and utilities for Examate microservices",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "examate",
+    "shared",
+    "types",
+    "dto"
+  ],
+  "author": "Examate Team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
