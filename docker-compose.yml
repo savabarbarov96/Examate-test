@@ -3,8 +3,6 @@
 # Production-ready microservices orchestration with profiles
 # =============================================================================
 
-version: '3.8'
-
 # YAML Anchors for shared configuration (DRY principle)
 x-logging: &default-logging
   driver: "json-file"

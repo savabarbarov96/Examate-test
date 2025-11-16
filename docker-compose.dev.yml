@@ -3,8 +3,6 @@
 # Hot reload with volume mounts, no redundant npm installs
 # =============================================================================
 
-version: '3.8'
-
 services:
   # Infrastructure services inherit from base (no overrides needed)
 
