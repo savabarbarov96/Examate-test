@@ -247,17 +247,17 @@ const commands = {
 
   async build() {
     log.info('Building all Docker images...\n');
-    runCompose('build');
+    runCompose('--profile dev --profile prod build');
   },
 
   async up() {
     log.info('Starting all services (production mode)...\n');
-    runCompose('up -d');
+    runCompose('--profile prod up -d');
   },
 
   async dev() {
     log.info('Starting all services (development mode with hot reload)...\n');
-    runCompose('-f docker-compose.yml -f docker-compose.dev.yml up');
+    runCompose('-f docker-compose.yml -f docker-compose.dev.yml --profile dev up');
   },
 
   async down() {
