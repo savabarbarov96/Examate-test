@@ -50,123 +50,125 @@
 :root {
   --radius: 0.5rem;
 
-  /* Scholarly theme - Warm cream base with burgundy accents */
-  --background: oklch(0.97 0.012 65);
-  --foreground: oklch(0.25 0.04 25);
+  /* Soft Periwinkle / Lavender Theme */
+  --background: oklch(0.98 0.01 260);
+  --foreground: oklch(0.2 0.04 260);
 
-  /* Cards with subtle warmth */
-  --card: oklch(0.99 0.008 60);
-  --card-foreground: oklch(0.25 0.04 25);
+  /* Cards - Soft and clean */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.04 260);
 
   /* Popovers */
-  --popover: oklch(0.99 0.008 60);
-  --popover-foreground: oklch(0.25 0.04 25);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.04 260);
 
-  /* Primary - Rich burgundy/wine */
-  --primary: oklch(0.38 0.15 15);
-  --primary-foreground: oklch(0.98 0.01 60);
+  /* Primary - Soft Lavender Blue */
+  --primary: oklch(0.65 0.15 260);
+  --primary-foreground: oklch(1 0 0);
 
-  /* Secondary - Warm gold */
-  --secondary: oklch(0.85 0.08 75);
-  --secondary-foreground: oklch(0.3 0.05 25);
+  /* Secondary - Pale Lavender */
+  --secondary: oklch(0.92 0.03 260);
+  --secondary-foreground: oklch(0.3 0.05 260);
 
-  /* Muted - Warm stone */
-  --muted: oklch(0.92 0.015 65);
-  --muted-foreground: oklch(0.5 0.03 30);
+  /* Muted - Cool Grey */
+  --muted: oklch(0.96 0.01 260);
+  --muted-foreground: oklch(0.5 0.04 260);
 
-  /* Accent - Vibrant gold */
-  --accent: oklch(0.75 0.15 80);
-  --accent-foreground: oklch(0.2 0.05 25);
+  /* Accent - Soft Pastel Peach/Gold */
+  --accent: oklch(0.85 0.1 80);
+  --accent-foreground: oklch(0.25 0.05 260);
 
-  /* Destructive - Deep rose */
-  --destructive: oklch(0.55 0.22 20);
+  /* Destructive - Soft Rose */
+  --destructive: oklch(0.7 0.15 10);
+  --destructive-foreground: oklch(0.98 0.01 260);
 
-  /* Borders - Subtle warm */
-  --border: oklch(0.88 0.02 65);
-  --input: oklch(0.88 0.02 65);
-  --ring: oklch(0.45 0.12 20);
+  /* Borders */
+  --border: oklch(0.9 0.02 260);
+  --input: oklch(0.9 0.02 260);
+  --ring: oklch(0.65 0.15 260);
 
-  /* Chart colors - Academic palette */
-  --chart-1: oklch(0.42 0.18 15); /* Burgundy */
-  --chart-2: oklch(0.68 0.14 75); /* Gold */
-  --chart-3: oklch(0.55 0.12 190); /* Teal */
-  --chart-4: oklch(0.65 0.16 50); /* Amber */
-  --chart-5: oklch(0.48 0.14 280); /* Purple */
+  /* Chart colors - Pastel Palette */
+  --chart-1: oklch(0.65 0.15 260); /* Lavender */
+  --chart-2: oklch(0.75 0.15 180); /* Soft Teal */
+  --chart-3: oklch(0.8 0.12 80);  /* Peach */
+  --chart-4: oklch(0.7 0.12 330); /* Soft Pink */
+  --chart-5: oklch(0.7 0.12 140); /* Soft Green */
 
-  /* Sidebar - Deep burgundy */
-  --sidebar: oklch(0.32 0.12 15);
-  --sidebar-foreground: oklch(0.95 0.01 60);
-  --sidebar-primary: oklch(0.75 0.15 80);
-  --sidebar-primary-foreground: oklch(0.25 0.04 25);
-  --sidebar-accent: oklch(0.4 0.14 18);
-  --sidebar-accent-foreground: oklch(0.95 0.01 60);
-  --sidebar-border: oklch(0.4 0.1 20);
-  --sidebar-ring: oklch(0.75 0.15 80);
+  /* Sidebar */
+  --sidebar: oklch(0.97 0.01 260);
+  --sidebar-foreground: oklch(0.3 0.05 260);
+  --sidebar-primary: oklch(0.65 0.15 260);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.94 0.02 260);
+  --sidebar-accent-foreground: oklch(0.2 0.04 260);
+  --sidebar-border: oklch(0.9 0.02 260);
+  --sidebar-ring: oklch(0.65 0.15 260);
 
-  /* Custom exam-specific colors */
-  --exam-active: oklch(0.6 0.15 145); /* Fresh green for active exams */
-  --exam-draft: oklch(0.7 0.1 65); /* Warm amber for drafts */
-  --exam-completed: oklch(0.55 0.08 240); /* Cool blue for completed */
+  /* Exam colors - Pastel indicators */
+  --exam-active: oklch(0.7 0.12 140); /* Pastel Green */
+  --exam-draft: oklch(0.8 0.12 80);   /* Pastel Orange */
+  --exam-completed: oklch(0.65 0.12 240); /* Pastel Blue */
 }
 
 .dark {
-  /* Dark scholarly theme - Deep charcoal with warm accents */
-  --background: oklch(0.18 0.02 25);
-  --foreground: oklch(0.95 0.01 60);
+  /* Dark Lavender Theme */
+  --background: oklch(0.15 0.03 260);
+  --foreground: oklch(0.95 0.01 260);
 
-  /* Cards - Slightly elevated */
-  --card: oklch(0.22 0.025 25);
-  --card-foreground: oklch(0.95 0.01 60);
+  /* Cards */
+  --card: oklch(0.2 0.04 260);
+  --card-foreground: oklch(0.95 0.01 260);
 
   /* Popovers */
-  --popover: oklch(0.22 0.025 25);
-  --popover-foreground: oklch(0.95 0.01 60);
+  --popover: oklch(0.2 0.04 260);
+  --popover-foreground: oklch(0.95 0.01 260);
 
-  /* Primary - Warm burgundy glow */
-  --primary: oklch(0.55 0.18 15);
-  --primary-foreground: oklch(0.98 0.01 60);
+  /* Primary - Richer Lavender */
+  --primary: oklch(0.7 0.15 260);
+  --primary-foreground: oklch(0.15 0.03 260);
 
-  /* Secondary - Rich gold */
-  --secondary: oklch(0.45 0.1 75);
-  --secondary-foreground: oklch(0.95 0.01 60);
+  /* Secondary */
+  --secondary: oklch(0.3 0.05 260);
+  --secondary-foreground: oklch(0.95 0.01 260);
 
   /* Muted */
-  --muted: oklch(0.28 0.03 30);
-  --muted-foreground: oklch(0.65 0.02 50);
+  --muted: oklch(0.25 0.03 260);
+  --muted-foreground: oklch(0.7 0.02 260);
 
-  /* Accent - Bright gold */
-  --accent: oklch(0.7 0.16 80);
-  --accent-foreground: oklch(0.15 0.02 25);
+  /* Accent */
+  --accent: oklch(0.75 0.12 80);
+  --accent-foreground: oklch(0.15 0.03 260);
 
   /* Destructive */
-  --destructive: oklch(0.6 0.24 20);
+  --destructive: oklch(0.6 0.18 10);
+  --destructive-foreground: oklch(0.95 0.01 260);
 
   /* Borders */
-  --border: oklch(0.32 0.03 30);
-  --input: oklch(0.28 0.03 30);
-  --ring: oklch(0.6 0.15 75);
+  --border: oklch(0.3 0.04 260);
+  --input: oklch(0.3 0.04 260);
+  --ring: oklch(0.7 0.15 260);
 
-  /* Chart colors - Dark mode optimized */
-  --chart-1: oklch(0.6 0.2 15);
-  --chart-2: oklch(0.75 0.16 75);
-  --chart-3: oklch(0.65 0.14 190);
-  --chart-4: oklch(0.72 0.18 50);
-  --chart-5: oklch(0.62 0.16 280);
+  /* Chart colors */
+  --chart-1: oklch(0.7 0.15 260);
+  --chart-2: oklch(0.75 0.15 180);
+  --chart-3: oklch(0.8 0.12 80);
+  --chart-4: oklch(0.7 0.12 330);
+  --chart-5: oklch(0.7 0.12 140);
 
   /* Sidebar */
-  --sidebar: oklch(0.15 0.02 20);
-  --sidebar-foreground: oklch(0.92 0.01 60);
-  --sidebar-primary: oklch(0.7 0.16 80);
-  --sidebar-primary-foreground: oklch(0.15 0.02 25);
-  --sidebar-accent: oklch(0.25 0.04 25);
-  --sidebar-accent-foreground: oklch(0.92 0.01 60);
-  --sidebar-border: oklch(0.28 0.03 25);
-  --sidebar-ring: oklch(0.7 0.16 80);
+  --sidebar: oklch(0.12 0.03 260);
+  --sidebar-foreground: oklch(0.9 0.01 260);
+  --sidebar-primary: oklch(0.7 0.15 260);
+  --sidebar-primary-foreground: oklch(0.15 0.03 260);
+  --sidebar-accent: oklch(0.25 0.04 260);
+  --sidebar-accent-foreground: oklch(0.95 0.01 260);
+  --sidebar-border: oklch(0.25 0.04 260);
+  --sidebar-ring: oklch(0.7 0.15 260);
 
-  /* Exam colors - Dark optimized */
-  --exam-active: oklch(0.65 0.16 145);
-  --exam-draft: oklch(0.72 0.12 65);
-  --exam-completed: oklch(0.6 0.1 240);
+  /* Exam colors */
+  --exam-active: oklch(0.7 0.12 140);
+  --exam-draft: oklch(0.75 0.12 80);
+  --exam-completed: oklch(0.7 0.12 240);
 }
 
 @layer base {
@@ -185,7 +187,7 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     font-weight: 400;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
   }
 
   code, pre, kbd, samp {
@@ -194,88 +196,30 @@
 }
 
 @layer utilities {
-  /* Creative Academic Backgrounds - Library Aesthetic */
+  /* Soft Lavender Gradient Background */
   .bg-scholarly-gradient {
-    background-color: oklch(0.97 0.012 65);
+    background-color: oklch(0.98 0.01 260);
     background-image:
-      /* Subtle radial accents for depth */
-      radial-gradient(circle at 15% 85%, oklch(0.42 0.15 15 / 0.04) 0%, transparent 50%),
-      radial-gradient(circle at 85% 15%, oklch(0.75 0.15 80 / 0.03) 0%, transparent 50%),
-      /* Fine grid pattern - academic paper */
-      repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 19px,
-        oklch(0.38 0.15 15 / 0.018) 19px,
-        oklch(0.38 0.15 15 / 0.018) 20px
-      ),
-      repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 19px,
-        oklch(0.38 0.15 15 / 0.018) 19px,
-        oklch(0.38 0.15 15 / 0.018) 20px
-      ),
-      /* Diagonal hatching for texture */
-      repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 80px,
-        oklch(0.75 0.15 80 / 0.012) 80px,
-        oklch(0.75 0.15 80 / 0.012) 81px
-      );
+      radial-gradient(circle at 0% 0%, oklch(0.65 0.15 260 / 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, oklch(0.8 0.12 80 / 0.05) 0%, transparent 50%),
+      linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 100%);
   }
 
   .dark .bg-scholarly-gradient {
-    background-color: oklch(0.18 0.02 25);
+    background-color: oklch(0.15 0.03 260);
     background-image:
-      radial-gradient(circle at 15% 85%, oklch(0.55 0.18 15 / 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 85% 15%, oklch(0.7 0.16 80 / 0.05) 0%, transparent 50%),
-      repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 19px,
-        oklch(0.55 0.18 15 / 0.025) 19px,
-        oklch(0.55 0.18 15 / 0.025) 20px
-      ),
-      repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 19px,
-        oklch(0.55 0.18 15 / 0.025) 19px,
-        oklch(0.55 0.18 15 / 0.025) 20px
-      ),
-      repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 80px,
-        oklch(0.7 0.16 80 / 0.02) 80px,
-        oklch(0.7 0.16 80 / 0.02) 81px
-      );
+      radial-gradient(circle at 0% 0%, oklch(0.7 0.15 260 / 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, oklch(0.75 0.12 80 / 0.05) 0%, transparent 50%);
   }
 
-  /* Exam pattern - subtle square mosaic */
+  /* Exam pattern - Soft Dots */
   .bg-exam-pattern {
-    background-image:
-      repeating-conic-gradient(
-        from 45deg at 10px 10px,
-        oklch(0.95 0.01 65 / 0.15) 0deg 90deg,
-        transparent 90deg 180deg,
-        oklch(0.95 0.01 65 / 0.08) 180deg 270deg,
-        transparent 270deg 360deg
-      );
+    background-image: radial-gradient(oklch(0.65 0.15 260 / 0.1) 1px, transparent 1px);
     background-size: 20px 20px;
   }
 
   .dark .bg-exam-pattern {
-    background-image:
-      repeating-conic-gradient(
-        from 45deg at 10px 10px,
-        oklch(0.25 0.03 30 / 0.2) 0deg 90deg,
-        transparent 90deg 180deg,
-        oklch(0.25 0.03 30 / 0.12) 180deg 270deg,
-        transparent 270deg 360deg
-      );
+    background-image: radial-gradient(oklch(0.7 0.15 260 / 0.15) 1px, transparent 1px);
     background-size: 20px 20px;
   }
 

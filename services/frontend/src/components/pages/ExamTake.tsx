@@ -16,14 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-interface Question {
-  id: string;
-  type: 'multiple-choice' | 'true-false' | 'short-answer' | 'essay';
-  question: string;
-  points: number;
-  options?: string[];
-}
+import { mockQuestionPool } from '@/utils/mockQuestions';
 
 interface Answer {
   questionId: string;
@@ -31,40 +24,19 @@ interface Answer {
   flagged: boolean;
 }
 
-// Mock exam data
-const mockExam = {
-  id: '1',
-  title: 'Advanced Calculus Final Exam',
-  description: 'Comprehensive assessment covering derivatives, integrals, and series',
-  duration: 120, // minutes
-  questions: [
-    {
-      id: 'q1',
-      type: 'multiple-choice' as const,
-      question: 'What is the derivative of f(x) = x³ + 2x² - 5x + 1?',
-      points: 5,
-      options: ['3x² + 4x - 5', '3x² + 2x - 5', 'x³ + 4x - 5', '3x² + 4x + 5'],
-    },
-    {
-      id: 'q2',
-      type: 'true-false' as const,
-      question: 'The integral of a constant function is always zero.',
-      points: 3,
-    },
-    {
-      id: 'q3',
-      type: 'short-answer' as const,
-      question: 'Calculate the limit as x approaches 0 of (sin(x))/x',
-      points: 8,
-    },
-    {
-      id: 'q4',
-      type: 'essay' as const,
-      question: 'Explain the Fundamental Theorem of Calculus and provide an example of its application.',
-      points: 15,
-    },
-  ] as Question[],
+// Generate a random exam for the take page
+const generateMockExam = () => {
+  const questions = mockQuestionPool.slice(0, 10); // Take first 10 for demo
+  return {
+    id: '1',
+    title: 'Sample Generated Exam',
+    description: 'This is a sample exam generated from the question pool.',
+    duration: 60,
+    questions: questions
+  };
 };
+
+const mockExam = generateMockExam();
 
 export default function ExamTakePage() {
   const { id } = useParams();
@@ -124,7 +96,7 @@ export default function ExamTakePage() {
 
   const getTimeColor = () => {
     if (timeRemaining < 300) return 'text-destructive'; // < 5 minutes
-    if (timeRemaining < 600) return 'text-[oklch(0.65_0.16_50)]'; // < 10 minutes
+    if (timeRemaining < 600) return 'text-yellow-500'; // < 10 minutes
     return 'text-primary';
   };
 
@@ -135,7 +107,7 @@ export default function ExamTakePage() {
   return (
     <div className="min-h-screen bg-scholarly-gradient">
       {/* Fixed Header */}
-      <div className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur-sm">
+      <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -210,13 +182,13 @@ export default function ExamTakePage() {
                           relative aspect-square rounded-lg font-mono font-semibold text-sm
                           transition-all duration-200 hover:scale-110
                           ${isCurrent ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2' : ''}
-                          ${!isCurrent && isAnswered ? 'bg-[oklch(var(--exam-active))] text-white' : ''}
+                          ${!isCurrent && isAnswered ? 'bg-green-500 text-white' : ''}
                           ${!isCurrent && !isAnswered ? 'bg-muted text-muted-foreground' : ''}
                         `}
                       >
                         {index + 1}
                         {isFlagged && (
-                          <Flag className="absolute -top-1 -right-1 w-3 h-3 text-[oklch(0.65_0.16_50)] fill-current" />
+                          <Flag className="absolute -top-1 -right-1 w-3 h-3 text-yellow-500 fill-current" />
                         )}
                       </button>
                     );
@@ -224,7 +196,7 @@ export default function ExamTakePage() {
                 </div>
                 <div className="mt-4 space-y-2 text-xs">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-[oklch(var(--exam-active))]" />
+                    <div className="w-4 h-4 rounded bg-green-500" />
                     <span>Answered</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -252,6 +224,9 @@ export default function ExamTakePage() {
                       </span>
                       <Badge variant="outline" className="text-base">
                         {currentQuestion.points} points
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs uppercase">
+                        {currentQuestion.difficulty}
                       </Badge>
                     </div>
                     <p className="text-xl leading-relaxed">{currentQuestion.question}</p>
@@ -411,7 +386,7 @@ export default function ExamTakePage() {
                 You have answered {answeredCount} out of {mockExam.questions.length} questions.
               </p>
               {answeredCount < mockExam.questions.length && (
-                <div className="flex items-start gap-2 text-[oklch(0.65_0.16_50)]">
+                <div className="flex items-start gap-2 text-yellow-500">
                   <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <p>
                     {mockExam.questions.length - answeredCount} question(s) remain unanswered and will be marked as incorrect.

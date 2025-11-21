@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { ArrowLeft, CheckCircle2, XCircle, Award, Clock, Target, TrendingUp, BookOpen, Download } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Award, Clock, Target, TrendingUp, BookOpen, Download, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 
 interface QuestionResult {
   id: string;
@@ -15,18 +16,19 @@ interface QuestionResult {
   correctAnswer: number | string;
   options?: string[];
   feedback?: string;
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 
-// Mock results data
+// Mock results data with difficulty
 const mockResults = {
   examId: '1',
-  examTitle: 'Advanced Calculus Final Exam',
+  examTitle: 'Sample Generated Exam',
   studentName: 'John Doe',
   submittedAt: '2025-01-16T14:30:00',
-  totalPoints: 31,
-  earnedPoints: 24,
-  percentage: 77,
-  timeSpent: 95, // minutes
+  totalPoints: 35,
+  earnedPoints: 28,
+  percentage: 80,
+  timeSpent: 45, // minutes
   questions: [
     {
       id: 'q1',
@@ -38,6 +40,7 @@ const mockResults = {
       correctAnswer: 0,
       options: ['3x² + 4x - 5', '3x² + 2x - 5', 'x³ + 4x - 5', '3x² + 4x + 5'],
       feedback: 'Excellent! You correctly applied the power rule to each term.',
+      difficulty: 'medium'
     },
     {
       id: 'q2',
@@ -48,6 +51,7 @@ const mockResults = {
       userAnswer: 'true',
       correctAnswer: 'false',
       feedback: 'Incorrect. The integral of a constant c is cx + C, where C is the constant of integration.',
+      difficulty: 'easy'
     },
     {
       id: 'q3',
@@ -58,6 +62,7 @@ const mockResults = {
       userAnswer: '1',
       correctAnswer: '1',
       feedback: 'Perfect! This is a fundamental limit in calculus.',
+      difficulty: 'hard'
     },
     {
       id: 'q4',
@@ -67,8 +72,30 @@ const mockResults = {
       earned: 11,
       userAnswer: 'The Fundamental Theorem of Calculus connects differentiation and integration...',
       correctAnswer: '',
-      feedback: 'Good explanation of the theorem. Your example was clear, but you could have elaborated more on the practical applications. Consider discussing how it relates to finding areas under curves.',
+      feedback: 'Good explanation of the theorem. Your example was clear, but you could have elaborated more on the practical applications.',
+      difficulty: 'hard'
     },
+    {
+      id: 'q5',
+      type: 'multiple-choice' as const,
+      question: 'What is 2 + 2?',
+      points: 1,
+      earned: 1,
+      userAnswer: 2,
+      correctAnswer: 2,
+      options: ['3', '5', '4', '22'],
+      difficulty: 'easy'
+    },
+    {
+      id: 'q6',
+      type: 'true-false' as const,
+      question: 'Is the earth flat?',
+      points: 1,
+      earned: 1,
+      userAnswer: 'false',
+      correctAnswer: 'false',
+      difficulty: 'easy'
+    }
   ] as QuestionResult[],
 };
 
@@ -78,10 +105,10 @@ export default function ExamResultsPage() {
   const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
 
   const getGradeColor = (percentage: number) => {
-    if (percentage >= 90) return 'text-[oklch(0.6_0.15_145)]'; // A
-    if (percentage >= 80) return 'text-[oklch(0.68_0.14_75)]'; // B
-    if (percentage >= 70) return 'text-[oklch(0.65_0.16_50)]'; // C
-    if (percentage >= 60) return 'text-[oklch(0.65_0.16_50)]'; // D
+    if (percentage >= 90) return 'text-green-500'; // A
+    if (percentage >= 80) return 'text-primary'; // B
+    if (percentage >= 70) return 'text-yellow-500'; // C
+    if (percentage >= 60) return 'text-orange-500'; // D
     return 'text-destructive'; // F
   };
 
@@ -96,6 +123,16 @@ export default function ExamResultsPage() {
   const correctAnswers = mockResults.questions.filter((q) => q.earned === q.points).length;
   const partialAnswers = mockResults.questions.filter((q) => q.earned > 0 && q.earned < q.points).length;
   const incorrectAnswers = mockResults.questions.filter((q) => q.earned === 0).length;
+
+  // Calculate difficulty stats
+  const difficultyStats = mockResults.questions.reduce((acc, q) => {
+    if (!acc[q.difficulty]) acc[q.difficulty] = { total: 0, correct: 0, points: 0, earned: 0 };
+    acc[q.difficulty].total++;
+    acc[q.difficulty].points += q.points;
+    acc[q.difficulty].earned += q.earned;
+    if (q.earned === q.points) acc[q.difficulty].correct++;
+    return acc;
+  }, {} as Record<string, { total: number; correct: number; points: number; earned: number }>);
 
   return (
     <div className="min-h-screen bg-scholarly-gradient p-6 md:p-8">
@@ -177,15 +214,15 @@ export default function ExamResultsPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-[oklch(var(--exam-active))]/20">
-                      <CheckCircle2 className="w-6 h-6 text-[oklch(var(--exam-active))]" />
+                    <div className="p-2 rounded-lg bg-green-500/20">
+                      <CheckCircle2 className="w-6 h-6 text-green-500" />
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Correct Answers</p>
                       <p className="text-2xl font-display">{correctAnswers}</p>
                     </div>
                   </div>
-                  <Badge className="bg-[oklch(var(--exam-active))] text-white">
+                  <Badge className="bg-green-500 text-white">
                     {Math.round((correctAnswers / mockResults.questions.length) * 100)}%
                   </Badge>
                 </div>
@@ -193,15 +230,15 @@ export default function ExamResultsPage() {
                 {partialAnswers > 0 && (
                   <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-[oklch(0.68_0.14_75)]/20">
-                        <Target className="w-6 h-6 text-[oklch(0.68_0.14_75)]" />
+                      <div className="p-2 rounded-lg bg-yellow-500/20">
+                        <Target className="w-6 h-6 text-yellow-500" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Partial Credit</p>
                         <p className="text-2xl font-display">{partialAnswers}</p>
                       </div>
                     </div>
-                    <Badge className="bg-[oklch(0.68_0.14_75)] text-[oklch(0.3_0.05_25)]">
+                    <Badge className="bg-yellow-500 text-white">
                       {Math.round((partialAnswers / mockResults.questions.length) * 100)}%
                     </Badge>
                   </div>
@@ -238,6 +275,40 @@ export default function ExamResultsPage() {
           </CardContent>
         </Card>
 
+        {/* Difficulty Analysis */}
+        <Card className="glass-effect border-2 animate-fade-in-up delay-200">
+          <CardHeader>
+            <CardTitle className="text-2xl font-display flex items-center gap-2">
+              <BarChart3 className="w-6 h-6 text-primary" />
+              Difficulty Analysis
+            </CardTitle>
+            <CardDescription>Performance breakdown by question difficulty</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {['easy', 'medium', 'hard'].map((diff) => {
+                const stats = difficultyStats[diff] || { total: 0, correct: 0, points: 0, earned: 0 };
+                const percentage = stats.total > 0 ? Math.round((stats.earned / stats.points) * 100) : 0;
+                const color = diff === 'easy' ? 'text-green-500' : diff === 'medium' ? 'text-yellow-500' : 'text-red-500';
+                const bg = diff === 'easy' ? 'bg-green-500' : diff === 'medium' ? 'bg-yellow-500' : 'bg-red-500';
+
+                return (
+                  <div key={diff} className="p-4 rounded-lg border-2 bg-background/50">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className={`font-display text-lg capitalize ${color}`}>{diff}</h3>
+                      <Badge variant="outline">{stats.correct}/{stats.total} Correct</Badge>
+                    </div>
+                    <div className="relative h-2 bg-muted rounded-full overflow-hidden mb-2">
+                      <div className={`absolute top-0 left-0 h-full ${bg}`} style={{ width: `${percentage}%` }}></div>
+                    </div>
+                    <p className="text-sm text-muted-foreground text-right">{percentage}% Score</p>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Performance Insights */}
         <Card className="glass-effect border-2 animate-fade-in-up delay-200">
           <CardHeader>
@@ -249,9 +320,9 @@ export default function ExamResultsPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg border-2 border-[oklch(var(--exam-active))]/30 bg-[oklch(var(--exam-active))]/5">
+              <div className="p-4 rounded-lg border-2 border-green-500/30 bg-green-500/5">
                 <div className="flex items-start gap-3">
-                  <Award className="w-5 h-5 text-[oklch(var(--exam-active))] flex-shrink-0 mt-1" />
+                  <Award className="w-5 h-5 text-green-500 flex-shrink-0 mt-1" />
                   <div>
                     <h3 className="font-display text-lg mb-2">Strengths</h3>
                     <ul className="space-y-1 text-sm text-muted-foreground">
@@ -262,9 +333,9 @@ export default function ExamResultsPage() {
                   </div>
                 </div>
               </div>
-              <div className="p-4 rounded-lg border-2 border-[oklch(0.65_0.16_50)]/30 bg-[oklch(0.65_0.16_50)]/5">
+              <div className="p-4 rounded-lg border-2 border-yellow-500/30 bg-yellow-500/5">
                 <div className="flex items-start gap-3">
-                  <BookOpen className="w-5 h-5 text-[oklch(0.65_0.16_50)] flex-shrink-0 mt-1" />
+                  <BookOpen className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-1" />
                   <div>
                     <h3 className="font-display text-lg mb-2">Areas to Review</h3>
                     <ul className="space-y-1 text-sm text-muted-foreground">
@@ -294,11 +365,9 @@ export default function ExamResultsPage() {
               return (
                 <Card
                   key={question.id}
-                  className={`border-2 transition-all duration-200 ${
-                    isCorrect ? 'border-[oklch(var(--exam-active))]/50' : ''
-                  } ${isPartial ? 'border-[oklch(0.68_0.14_75)]/50' : ''} ${
-                    !isCorrect && !isPartial ? 'border-destructive/50' : ''
-                  }`}
+                  className={`border-2 transition-all duration-200 ${isCorrect ? 'border-green-500/50' : ''
+                    } ${isPartial ? 'border-yellow-500/50' : ''} ${!isCorrect && !isPartial ? 'border-destructive/50' : ''
+                    }`}
                 >
                   <CardHeader
                     className="cursor-pointer hover:bg-muted/30 transition-colors"
@@ -308,7 +377,7 @@ export default function ExamResultsPage() {
                       <div className="flex items-start gap-3 flex-1">
                         <div className="p-2 rounded-lg bg-background">
                           {isCorrect ? (
-                            <CheckCircle2 className="w-5 h-5 text-[oklch(var(--exam-active))]" />
+                            <CheckCircle2 className="w-5 h-5 text-green-500" />
                           ) : (
                             <XCircle className="w-5 h-5 text-destructive" />
                           )}
@@ -320,6 +389,9 @@ export default function ExamResultsPage() {
                             </span>
                             <Badge variant="outline">
                               {question.earned} / {question.points} pts
+                            </Badge>
+                            <Badge variant="secondary" className="capitalize">
+                              {question.difficulty}
                             </Badge>
                           </div>
                           <p className="text-base leading-relaxed">{question.question}</p>
@@ -340,17 +412,16 @@ export default function ExamResultsPage() {
                             return (
                               <div
                                 key={optIndex}
-                                className={`p-3 rounded-lg border-2 ${
-                                  isCorrectOption
-                                    ? 'border-[oklch(var(--exam-active))] bg-[oklch(var(--exam-active))]/10'
+                                className={`p-3 rounded-lg border-2 ${isCorrectOption
+                                    ? 'border-green-500 bg-green-500/10'
                                     : isUserAnswer
-                                    ? 'border-destructive bg-destructive/10'
-                                    : 'border-border'
-                                }`}
+                                      ? 'border-destructive bg-destructive/10'
+                                      : 'border-border'
+                                  }`}
                               >
                                 <div className="flex items-center gap-2">
                                   {isCorrectOption && (
-                                    <CheckCircle2 className="w-4 h-4 text-[oklch(var(--exam-active))]" />
+                                    <CheckCircle2 className="w-4 h-4 text-green-500" />
                                   )}
                                   {isUserAnswer && !isCorrectOption && (
                                     <XCircle className="w-4 h-4 text-destructive" />
@@ -361,7 +432,7 @@ export default function ExamResultsPage() {
                                     </strong>
                                     {option}
                                     {isCorrectOption && (
-                                      <Badge className="ml-2 bg-[oklch(var(--exam-active))] text-white">
+                                      <Badge className="ml-2 bg-green-500 text-white">
                                         Correct
                                       </Badge>
                                     )}
@@ -382,17 +453,16 @@ export default function ExamResultsPage() {
                       {question.type === 'true-false' && (
                         <div className="pl-10 flex gap-3">
                           <div
-                            className={`flex-1 p-3 rounded-lg border-2 ${
-                              question.correctAnswer === 'true'
-                                ? 'border-[oklch(var(--exam-active))] bg-[oklch(var(--exam-active))]/10'
+                            className={`flex-1 p-3 rounded-lg border-2 ${question.correctAnswer === 'true'
+                                ? 'border-green-500 bg-green-500/10'
                                 : question.userAnswer === 'true'
-                                ? 'border-destructive bg-destructive/10'
-                                : 'border-border'
-                            }`}
+                                  ? 'border-destructive bg-destructive/10'
+                                  : 'border-border'
+                              }`}
                           >
                             <div className="flex items-center justify-center gap-2">
                               {question.correctAnswer === 'true' && (
-                                <CheckCircle2 className="w-4 h-4 text-[oklch(var(--exam-active))]" />
+                                <CheckCircle2 className="w-4 h-4 text-green-500" />
                               )}
                               {question.userAnswer === 'true' && question.correctAnswer !== 'true' && (
                                 <XCircle className="w-4 h-4 text-destructive" />
@@ -401,17 +471,16 @@ export default function ExamResultsPage() {
                             </div>
                           </div>
                           <div
-                            className={`flex-1 p-3 rounded-lg border-2 ${
-                              question.correctAnswer === 'false'
-                                ? 'border-[oklch(var(--exam-active))] bg-[oklch(var(--exam-active))]/10'
+                            className={`flex-1 p-3 rounded-lg border-2 ${question.correctAnswer === 'false'
+                                ? 'border-green-500 bg-green-500/10'
                                 : question.userAnswer === 'false'
-                                ? 'border-destructive bg-destructive/10'
-                                : 'border-border'
-                            }`}
+                                  ? 'border-destructive bg-destructive/10'
+                                  : 'border-border'
+                              }`}
                           >
                             <div className="flex items-center justify-center gap-2">
                               {question.correctAnswer === 'false' && (
-                                <CheckCircle2 className="w-4 h-4 text-[oklch(var(--exam-active))]" />
+                                <CheckCircle2 className="w-4 h-4 text-green-500" />
                               )}
                               {question.userAnswer === 'false' && question.correctAnswer !== 'false' && (
                                 <XCircle className="w-4 h-4 text-destructive" />
@@ -434,7 +503,7 @@ export default function ExamResultsPage() {
                           {question.correctAnswer && (
                             <div>
                               <Label className="text-sm text-muted-foreground mb-2">Model Answer:</Label>
-                              <div className="p-4 bg-[oklch(var(--exam-active))]/10 rounded-lg border-2 border-[oklch(var(--exam-active))]/30">
+                              <div className="p-4 bg-green-500/10 rounded-lg border-2 border-green-500/30">
                                 <p className="whitespace-pre-wrap">{question.correctAnswer}</p>
                               </div>
                             </div>
