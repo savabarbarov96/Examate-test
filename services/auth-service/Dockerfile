@@ -28,7 +28,15 @@ COPY --from=dependencies /app/node_modules ./node_modules
 
 # Copy source files
 COPY package.json package-lock.json tsconfig.json ./
-COPY src ./src
+COPY controllers ./controllers
+COPY middlewares ./middlewares
+COPY models ./models
+COPY routes ./routes
+COPY utils ./utils
+COPY server.ts ./
+COPY env.d.ts ./
+# Note: databases/ folder is optional - only needed if using GEO_PROVIDER=maxmind
+# COPY databases ./databases
 
 # Build TypeScript
 RUN npm run build
@@ -51,6 +59,8 @@ COPY --from=dependencies /prod_node_modules ./node_modules
 # Copy built application
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
+# Note: databases/ folder is optional - only needed if using GEO_PROVIDER=maxmind
+# COPY --from=builder /app/databases ./databases
 
 # Change ownership to non-root user
 RUN chown -R nodejs:nodejs /app

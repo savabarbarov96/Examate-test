@@ -28,12 +28,12 @@ COPY --from=dependencies /app/node_modules ./node_modules
 
 # Copy source files
 COPY package.json package-lock.json tsconfig.json ./
-COPY src ./src
+COPY controllers ./controllers
+COPY middlewares ./middlewares
 COPY models ./models
 COPY routes ./routes
-COPY middleware ./middleware
-COPY controllers ./controllers
 COPY utils ./utils
+COPY server.ts ./
 
 # Build TypeScript
 RUN npm run build

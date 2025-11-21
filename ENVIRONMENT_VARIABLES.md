@@ -54,6 +54,40 @@ Located in `services/auth-service/.env`:
 | `EMAIL_USERNAME` | SMTP username | ✓ Yes |
 | `EMAIL_PASSWORD` | SMTP password | ✓ Yes |
 
+#### GeoIP Configuration (Auth Service)
+
+The auth service supports multiple geo lookup providers for tracking user login locations:
+
+| Variable | Description | Default | Options |
+|----------|-------------|---------|---------|
+| `GEO_PROVIDER` | Geo lookup provider | `maxmind` | `maxmind`, `ipapi`, `disabled` |
+| `GEO_CACHE_TTL` | Redis cache TTL in seconds | `604800` (7 days) | Any positive integer |
+| `IPAPI_TIMEOUT` | API timeout in milliseconds | `3000` | Any positive integer |
+
+**Provider Options**:
+
+- **`maxmind`** (default): Uses local GeoLite2-City database (requires 61MB `.mmdb` file in `services/auth-service/databases/`)
+  - ✓ Fast (no external API calls)
+  - ✓ Works offline
+  - ✗ Requires large database file
+  - ✗ Database becomes stale over time
+
+- **`ipapi`**: Uses ipapi.co external API
+  - ✓ Always up-to-date
+  - ✓ No database file needed
+  - ✓ Free tier: 1000 requests/day
+  - ✗ Requires internet connection
+  - ✗ Slower than local database
+
+- **`disabled`**: Returns "Unknown" for all lookups
+  - ✓ No dependencies
+  - ✓ Fastest
+  - ✗ No geo data collected
+
+**Caching**: All providers use Redis caching to reduce lookups. The `GEO_CACHE_TTL` controls how long geo data is cached (default: 7 days).
+
+**Graceful Degradation**: If the MaxMind database is missing or a provider fails, the service returns "Unknown" instead of crashing.
+
 ### User Service (Port 5001)
 
 Located in `services/user-service/.env`:
